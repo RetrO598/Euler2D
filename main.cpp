@@ -24,13 +24,13 @@ int main(int argc, char *argv[]) {
   geometry.ReadGrid();
   geometry.printInfo();
   geometry.ComputeMetrics();
-  geometry.outputMeshInfo();
+  ;
   solver::FVMSolver solver(param, geometry);
   solver.initSolver();
   solver.ConvToDependAll();
   solver.BoundaryConditions();
 
-  solver.limiter->limiterRefVals(solver.param, solver.geom);
+  solver.limiter->limiterRefVals();
   solver.iter = 0;
   do {
     solver.iter++;

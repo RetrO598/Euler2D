@@ -7,15 +7,38 @@
 #include <vector>
 
 namespace solver {
-VenkatakrishnanLimiter::VenkatakrishnanLimiter() {
+BaseLimiter::BaseLimiter(const preprocess::parameter &param,
+                         const preprocess::Geometry &geom,
+                         std::vector<CONS_VAR> &cv, std::vector<DEPEND_VAR> &dv,
+                         std::vector<PRIM_VAR> &umin,
+                         std::vector<PRIM_VAR> &umax,
+                         std::vector<PRIM_VAR> &lim,
+                         std::vector<PRIM_VAR> &gradx,
+                         std::vector<PRIM_VAR> &grady)
+    : param(param),
+      geom(geom),
+      cv(cv),
+      dv(dv),
+      umin(umin),
+      umax(umax),
+      lim(lim),
+      gradx(gradx),
+      grady(grady) {}
+
+VenkatakrishnanLimiter::VenkatakrishnanLimiter(
+    const preprocess::parameter &param, const preprocess::Geometry &geom,
+    std::vector<CONS_VAR> &cv, std::vector<DEPEND_VAR> &dv,
+    std::vector<PRIM_VAR> &umin, std::vector<PRIM_VAR> &umax,
+    std::vector<PRIM_VAR> &lim, std::vector<PRIM_VAR> &gradx,
+    std::vector<PRIM_VAR> &grady)
+    : BaseLimiter(param, geom, cv, dv, umin, umax, lim, gradx, grady) {
   limRef.dens = 0.0;
   limRef.press = 0.0;
   limRef.velx = 0.0;
   limRef.vely = 0.0;
 }
 
-void VenkatakrishnanLimiter::limiterRefVals(preprocess::parameter &param,
-                                            const preprocess::Geometry &geom) {
+void VenkatakrishnanLimiter::limiterRefVals() {
   volRef = -1.0e+32;
   for (int i = 0; i < geom.phyNodes; ++i) {
     volRef = std::max(volRef, geom.vol[i]);
@@ -43,13 +66,7 @@ void VenkatakrishnanLimiter::limiterRefVals(preprocess::parameter &param,
   }
 }
 
-void VenkatakrishnanLimiter::limiterInit(preprocess::parameter &param,
-                                         const preprocess::Geometry &geom,
-                                         std::vector<CONS_VAR> &cv,
-                                         std::vector<DEPEND_VAR> &dv,
-                                         std::vector<PRIM_VAR> &umin,
-                                         std::vector<PRIM_VAR> &umax,
-                                         std::vector<PRIM_VAR> &lim) {
+void VenkatakrishnanLimiter::limiterInit() {
   for (int i = 0; i < geom.phyNodes; ++i) {
     umin[i].dens = cv[i].dens;
     umin[i].velx = cv[i].xmom / cv[i].dens;
@@ -130,12 +147,7 @@ void VenkatakrishnanLimiter::limiterInit(preprocess::parameter &param,
   }
 }
 
-void VenkatakrishnanLimiter::limiterUpdate(
-    preprocess::parameter &param, const preprocess::Geometry &geom,
-    std::vector<CONS_VAR> &cv, std::vector<DEPEND_VAR> &dv,
-    std::vector<PRIM_VAR> &umin, std::vector<PRIM_VAR> &umax,
-    std::vector<PRIM_VAR> &lim, std::vector<PRIM_VAR> &gradx,
-    std::vector<PRIM_VAR> &grady) {
+void VenkatakrishnanLimiter::limiterUpdate() {
   double eps2[4];
   for (int i = 0; i < geom.totNodes; ++i) {
     lim[i].dens = 1.0;
@@ -240,19 +252,6 @@ void VenkatakrishnanLimiter::limiterUpdate(
 
     ibegn = iendn + 1;
   }
-}
-
-double Venkat(double d2, double d1min, double d1max, double eps2) {
-  if (d2 > 1e-16) {
-    double num = (d1max * d1max + eps2) * d2 + 2.0 * d2 * d2 * d1max;
-    double den = d2 * (d1max * d1max + 2.0 * d2 * d2 + d1max * d2 + eps2);
-    return (num / den);
-  } else if (d2 < -1e-16) {
-    double num = (d1min * d1min + eps2) * d2 + 2.0 * d2 * d2 * d1min;
-    double den = d2 * (d1min * d1min + 2.0 * d2 * d2 + d1min * d2 + eps2);
-    return (num / den);
-  }
-  return 1.0;
 }
 
 }  // namespace solver

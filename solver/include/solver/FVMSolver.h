@@ -5,7 +5,6 @@
 #include <solver/limiter.h>
 #include <solver/variableDef.h>
 
-#include <memory>
 #include <vector>
 namespace solver {
 
@@ -66,9 +65,11 @@ class FVMSolver {
 
   preprocess::parameter &param;
   const preprocess::Geometry &geom;
+  BaseLimiter *limiter;
 
- public:
-  std::unique_ptr<VenkatakrishnanLimiter> limiter;
+  int iter;
+
+ private:
   std::vector<CONS_VAR> cv;
   std::vector<CONS_VAR> cvOld;
   std::vector<CONS_VAR> diss;
@@ -100,7 +101,5 @@ class FVMSolver {
   double mfratio;
   double drho;
   double drho1;
-
-  int iter;
 };
 }  // namespace solver

@@ -6,7 +6,6 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
-#include <memory>
 #include <vector>
 
 #include "solver/limiter.h"
@@ -45,7 +44,8 @@ FVMSolver::FVMSolver(preprocess::parameter &parameter,
 
   cl = 0.0;
 
-  limiter = std::make_unique<VenkatakrishnanLimiter>();
+  limiter = new VenkatakrishnanLimiter(param, geom, cv, dv, umin, umax, lim,
+                                       gradx, grady);
 
   rhsIter.reserve(nNodes);
   rhsOld.reserve(nNodes);
@@ -226,22 +226,6 @@ void FVMSolver::BoundaryConditions() {
     }
     ibegn = iendn + 1;
   }
-
-  std::ofstream outputCV("cv.txt");
-  for (int i = 0; i < geom.totNodes; ++i) {
-    outputCV << cv[i].dens << " " << cv[i].xmom << " " << cv[i].ymom << " "
-             << cv[i].ener << "\n";
-  }
-  // std::cout << "init end" << "\n";
-  outputCV.close();
-
-  std::ofstream outputDV("depend.txt");
-  for (int i = 0; i < geom.totNodes; ++i) {
-    outputDV << dv[i].press << " " << dv[i].temp << " " << dv[i].cs << " "
-             << dv[i].gamma << " " << dv[i].Cp << "\n";
-  }
-  // std::cout << "init end" << "\n";
-  outputDV.close();
 }
 
 void FVMSolver::BoundInflow(int beg, int end) {
@@ -996,9 +980,8 @@ void FVMSolver::solve() {
       if (param.equationtype_ == preprocess::equationType::Euler) {
         Gradients();
       }
-      limiter->limiterInit(param, geom, cv, dv, umin, umax, lim);
-      limiter->limiterUpdate(param, geom, cv, dv, umin, umax, lim, gradx,
-                             grady);
+      limiter->limiterInit();
+      limiter->limiterUpdate();
 
       DissipRoe2(param.dissipationBlend[irk]);
     }
