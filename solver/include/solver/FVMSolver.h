@@ -3,6 +3,7 @@
 #include <pre/geometry.h>
 #include <pre/parameter.h>
 #include <solver/limiter.h>
+#include <solver/numeric.h>
 #include <solver/variableDef.h>
 
 #include <vector>
@@ -31,15 +32,15 @@ class FVMSolver {
   void PeriodicInt(std::vector<int> &var);
   void PeriodicVisc();
 
-  void DissipInit(int irk, double beta);
-  void DissipRoe2(double beta);
+  // void DissipInit(int irk, double beta);
+  // void DissipRoe2(double beta);
 
-  void FluxRoe2();
-  void FluxWalls();
+  // void FluxRoe2();
+  // void FluxWalls();
 
   void solve();
 
-  double EntropyCorr(double z, double d);
+  // double EntropyCorr(double z, double d);
 
   void Timestep();
 
@@ -66,6 +67,7 @@ class FVMSolver {
   preprocess::parameter &param;
   const preprocess::Geometry &geom;
   BaseLimiter *limiter;
+  BaseNumeric *numeric;
 
   int iter;
 

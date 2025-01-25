@@ -12,7 +12,7 @@ void FVMSolver::solve() {
 
   for (int irk = 0; irk < param.temperalStages; ++irk) {
     if (param.dissipationEval[irk]) {
-      DissipInit(irk, param.dissipationBlend[irk]);
+      numeric->DissipInit(irk, param.dissipationBlend[irk]);
     }
 
     if (param.dissipationEval[irk]) {
@@ -22,10 +22,10 @@ void FVMSolver::solve() {
       limiter->limiterInit();
       limiter->limiterUpdate();
 
-      DissipRoe2(param.dissipationBlend[irk]);
+      numeric->DissipNumeric(param.dissipationBlend[irk]);
     }
 
-    FluxRoe2();
+    numeric->FluxNumeric();
     ZeroRes();
     PeriodicCons(rhs);
 
