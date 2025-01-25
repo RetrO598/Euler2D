@@ -1,0 +1,107 @@
+# Title
+VKI-1 transonic turbine blade
+#
+# Grid file (in)
+vki1.ugr
+#
+# Flow field to plot (out); 5 digit iteration number and .v2d will be added
+vki1_iso
+#
+# Surface quantities to plot (out); 5 digit iteration number and .v2d will be added
+vki1_surf
+#
+# Convergence history (out); .v2d will be added
+vki1_conv
+#
+# Restart solution (in)
+solin
+#
+# Restart solution (out)
+solout
+#
+# Physics - general
+# -----------------
+ I         # E=external flow, I=internal flow
+ E         # E=Euler (inviscid) / N=Navier-Stokes (laminar)
+ 1.4       # ratio of specific heats
+ 1004.5    # specific heat coeff. at constant pressure [J/kgK]
+ 10000.    # Reynolds number
+ 90.0      # reference velocity (internal flow only) [m/s]
+ 1.123     # reference density (internal flow only) [kg/m^3]
+ 0.72      # laminar Prandtl number
+#
+# Physics - external flow
+# -----------------------
+ 0.        # Mach-number at infinity
+ 0.        # angle of attack [deg]
+ 0.        # static pressure at infinity [Pa]
+ 0.        # static temperature at infinity [K]
+#
+# Physics - internal flow
+# -----------------------
+ 1.E+5     # total pressure at inlet [Pa]
+ 300.0     # total temperature at inlet [K]
+ 30.0      # flow angle at inlet (with x-axis) [deg]
+ 5.283E+4  # static pressure at outlet [Pa]
+ -67.0     # approximate flow angle at outlet (with x-axis) [deg]
+ 1.85      # approximate ratio of inlet to outlet static pressure
+#
+# Geometrical reference values
+# ----------------------------
+ 0.25      # x-coordinate of reference point (moment coefficient) [m]
+ 0.0       # y-coordinate              - '' -                     [m]
+ 1.0       # reference or cord length [m]
+#
+# Iteration control
+# -----------------
+ 3500      # max. number of iterations
+ 99999     # number of iterations between solution dumps
+ 1.0E-5    # convergence tolerance
+ N         # use previous solution for restart (Y=yes, N=no)
+#
+# Numerical parameters
+# --------------------
+ 5.5       # CFL-number
+ 0.4       # coefficient of implicit residual smoothing (<0 = no smoothing)
+ 2         # no. of Jacobi iterations for residual smoothing
+ L         # L=local, G=global time-stepping
+ N         # low Mach-number preconditioning (Y=yes, N=no)
+ 0.15      # preconditioning parameter K
+ 2         # first-order (1) / second-order (2) Roe scheme
+ 1.0       # limiter coefficient (used only for 2nd-order Roe scheme)
+ 0.05      # entropy correction coefficient
+ N         # correction of far-field due to single vortex (Y/N - external flow)
+ 5         # number of stages
+ 0.0695, 0.1602, 0.2898, 0.5060, 1.000    # stage coefficients (Roe scheme)
+ 1.00  , 1.00  , 1.00  , 1.00  , 1.00     # dissipation blending coeff.
+ 1     , 1     , 1     , 1     , 1        # dissipation evaluation (1=yes)
+#
+# Quantities to plot (Y=yes, N=no)
+# --------------------------------
+ Y   # density
+ Y   # u-velocity
+ Y   # v-velocity
+ Y   # static pressure
+ Y   # total pressure
+ Y   # static temperature
+ Y   # total temperature
+ Y   # local Mach-number
+ Y   # isentropic Mach-number
+ Y   # total pressure loss
+ N   # laminar viscosity (only if present)
+ N   # skin friction coefficient (boundaries only)
+ N   # pressure coefficient (boundaries only)
+
+##############################################################################
+
+ 0.1481,  0.4000,  1.0000     # stage coefficients (Roe scheme)
+ 1.00  ,  1.00  ,  1.00       # dissipation blending coeff.
+ 1     ,  1     ,  1          # dissipation evaluation (1=yes)
+
+ 0.0533, 0.1263, 0.2375, 0.4414, 1.000    # stage coefficients (Roe scheme)
+ 1.00  , 1.00  , 1.00  , 1.00  , 1.00     # dissipation blending coeff.
+ 1     , 1     , 1     , 1     , 1        # dissipation evaluation (1=yes)
+
+ 0.2742, 0.2067, 0.5020, 0.5142, 1.000    # stage coefficients (Roe scheme, viscous)
+ 1.00  , 0.00  , 0.56  , 0.00  , 0.44     # dissipation blending coeff.
+ 1     , 0     , 1     , 0     , 1        # dissipation evaluation (1=yes)
