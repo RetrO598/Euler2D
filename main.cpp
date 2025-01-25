@@ -24,7 +24,6 @@ int main(int argc, char *argv[]) {
   geometry.ReadGrid();
   geometry.printInfo();
   geometry.ComputeMetrics();
-  ;
   solver::FVMSolver solver(param, geometry);
   solver.initSolver();
   solver.ConvToDependAll();
