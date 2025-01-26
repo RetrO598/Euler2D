@@ -16,7 +16,12 @@ BaseLimiter::BaseLimiter(const preprocess::parameter &param,
                          std::vector<PRIM_VAR> &gradx,
                          std::vector<PRIM_VAR> &grady)
     : param(param), geom(geom), cv(cv), dv(dv), umin(umin), umax(umax),
-      lim(lim), gradx(gradx), grady(grady) {}
+      lim(lim), gradx(gradx), grady(grady) {
+  limRef.dens = 0.0;
+  limRef.press = 0.0;
+  limRef.velx = 0.0;
+  limRef.vely = 0.0;
+}
 
 VenkatakrishnanLimiter::VenkatakrishnanLimiter(
     const preprocess::parameter &param, const preprocess::Geometry &geom,
@@ -24,14 +29,9 @@ VenkatakrishnanLimiter::VenkatakrishnanLimiter(
     std::vector<PRIM_VAR> &umin, std::vector<PRIM_VAR> &umax,
     std::vector<PRIM_VAR> &lim, std::vector<PRIM_VAR> &gradx,
     std::vector<PRIM_VAR> &grady)
-    : BaseLimiter(param, geom, cv, dv, umin, umax, lim, gradx, grady) {
-  limRef.dens = 0.0;
-  limRef.press = 0.0;
-  limRef.velx = 0.0;
-  limRef.vely = 0.0;
-}
+    : BaseLimiter(param, geom, cv, dv, umin, umax, lim, gradx, grady) {}
 
-void VenkatakrishnanLimiter::limiterRefVals() {
+void BaseLimiter::limiterRefVals() {
   volRef = -1.0e+32;
   for (int i = 0; i < geom.phyNodes; ++i) {
     volRef = std::max(volRef, geom.vol[i]);
@@ -59,7 +59,7 @@ void VenkatakrishnanLimiter::limiterRefVals() {
   }
 }
 
-void VenkatakrishnanLimiter::limiterInit() {
+void BaseLimiter::limiterInit() {
   for (int i = 0; i < geom.phyNodes; ++i) {
     umin[i].dens = cv[i].dens;
     umin[i].velx = cv[i].xmom / cv[i].dens;
@@ -162,8 +162,13 @@ void VenkatakrishnanLimiter::limiterUpdate() {
 
     double rx = 0.5 * (geom.coords[j].x - geom.coords[i].x);
     double ry = 0.5 * (geom.coords[j].y - geom.coords[i].y);
-    double voll = std::pow(geom.vol[i], 1.5);
-    double volr = std::pow(geom.vol[j], 1.5);
+    // Original implementation
+    // double voll = std::pow(geom.vol[i], 1.5);
+    // double volr = std::pow(geom.vol[j], 1.5);
+
+    // Implementation of Nishikawa in "New Unstructured-Grid Limiter Functions"
+    double voll = std::pow(4 * geom.vol[i] / M_PI, 1.5);
+    double volr = std::pow(4 * geom.vol[j] / M_PI, 1.5);
 
     double eps2nl = eps2[0] * voll;
     double d1minl = umin[i].dens - cv[i].dens;
@@ -219,6 +224,159 @@ void VenkatakrishnanLimiter::limiterUpdate() {
     limval = Venkat(d2l, d1minl, d1maxl, eps2nl);
     lim[i].press = std::min(limval, lim[i].press);
     limval = Venkat(d2r, d1minr, d1maxr, eps2nr);
+    lim[j].press = std::min(limval, lim[j].press);
+  }
+
+  int ibegn = 0;
+
+  for (int ib = 0; ib < geom.numBoundSegs; ++ib) {
+    int iendn = geom.ibound[ib].bnodeIndex;
+    if (geom.BoundTypes[ib] >= 700 && geom.BoundTypes[ib] < 800) {
+      for (int ibn = ibegn; ibn <= iendn; ++ibn) {
+        int i = geom.boundaryNode[ibn].node;
+        int j = geom.boundaryNode[ibn].dummy;
+
+        lim[i].dens = std::min(lim[i].dens, lim[j].dens);
+        lim[i].velx = std::min(lim[i].velx, lim[j].velx);
+        lim[i].vely = std::min(lim[i].vely, lim[j].vely);
+        lim[i].press = std::min(lim[i].press, lim[j].press);
+
+        lim[j].dens = lim[i].dens;
+        lim[j].velx = lim[i].velx;
+        lim[j].vely = lim[i].vely;
+        lim[j].press = lim[i].press;
+      }
+    }
+
+    ibegn = iendn + 1;
+  }
+}
+
+NishikawaR3::NishikawaR3(const preprocess::parameter &param,
+                         const preprocess::Geometry &geom,
+                         std::vector<CONS_VAR> &cv, std::vector<DEPEND_VAR> &dv,
+                         std::vector<PRIM_VAR> &umin,
+                         std::vector<PRIM_VAR> &umax,
+                         std::vector<PRIM_VAR> &lim,
+                         std::vector<PRIM_VAR> &gradx,
+                         std::vector<PRIM_VAR> &grady)
+    : BaseLimiter(param, geom, cv, dv, umin, umax, lim, gradx, grady) {}
+
+void NishikawaR3::limiterUpdate() {
+  double eps;
+  PRIM_VAR init{1.0, 1.0, 1.0, 1.0};
+  lim.assign(geom.totNodes, {1.0, 1.0, 1.0, 1.0});
+
+  double limfac3 = std::pow(param.limiterCoeff, 4);
+  double rvolref = 1.0 / std::pow(volRef, 2);
+  eps = (limfac3 * rvolref);
+
+  for (int ie = 0; ie < geom.phyEdges; ++ie) {
+    int i = geom.edge[ie].nodei;
+    int j = geom.edge[ie].nodej;
+
+    double rx = 0.5 * (geom.coords[j].x - geom.coords[i].x);
+    double ry = 0.5 * (geom.coords[j].y - geom.coords[i].y);
+    // Original implementation
+    // double voll = std::pow(geom.vol[i], 1.5);
+    // double volr = std::pow(geom.vol[j], 1.5);
+
+    // Implementation of Nishikawa in "New Unstructured-Grid Limiter Functions"
+    double voll = std::pow(4 * geom.vol[i] / M_PI, 2);
+    double volr = std::pow(4 * geom.vol[j] / M_PI, 2);
+
+    double eps2nl = eps * voll;
+    double d1minl = umin[i].dens - cv[i].dens;
+    double d1maxl = umax[i].dens - cv[i].dens;
+    double eps2nr = eps * volr;
+    double d1minr = umin[j].dens - cv[j].dens;
+    double d1maxr = umax[j].dens - cv[j].dens;
+    double d2l = gradx[i].dens * rx + grady[i].dens * ry;
+    double d2r = -gradx[j].dens * rx - grady[j].dens * ry;
+
+    double limval;
+    if (d2l >= 0) {
+      limval = Nishikawa_R3(d1maxl / limRef.dens, d2l / limRef.dens, eps2nl);
+    } else {
+      limval = Nishikawa_R3(d1minl / limRef.dens, d2l / limRef.dens, eps2nl);
+    }
+    lim[i].dens = std::min(limval, lim[i].dens);
+
+    if (d2r >= 0) {
+      limval = Nishikawa_R3(d1maxr / limRef.dens, d2r / limRef.dens, eps2nr);
+    } else {
+      limval = Nishikawa_R3(d1minr / limRef.dens, d2r / limRef.dens, eps2nr);
+    }
+    lim[j].dens = std::min(limval, lim[j].dens);
+
+    double ul = cv[i].xmom / cv[i].dens;
+    double ur = cv[j].xmom / cv[j].dens;
+    eps2nl = eps * voll;
+    d1minl = umin[i].velx - ul;
+    d1maxl = umax[i].velx - ul;
+    eps2nr = eps * volr;
+    d1minr = umin[j].velx - ur;
+    d1maxr = umax[j].velx - ur;
+    d2l = gradx[i].velx * rx + grady[i].velx * ry;
+    d2r = -gradx[j].velx * rx - grady[j].velx * ry;
+    if (d2l >= 0) {
+      limval = Nishikawa_R3(d1maxl / limRef.velx, d2l / limRef.velx, eps2nl);
+    } else {
+      limval = Nishikawa_R3(d1minl / limRef.velx, d2l / limRef.velx, eps2nl);
+    }
+    lim[i].velx = std::min(limval, lim[i].velx);
+
+    if (d2r >= 0) {
+      limval = Nishikawa_R3(d1maxr / limRef.velx, d2r / limRef.velx, eps2nr);
+    } else {
+      limval = Nishikawa_R3(d1minr / limRef.velx, d2r / limRef.velx, eps2nr);
+    }
+    lim[j].velx = std::min(limval, lim[j].velx);
+
+    double vl = cv[i].ymom / cv[i].dens;
+    double vr = cv[j].ymom / cv[j].dens;
+    eps2nl = eps * voll;
+    d1minl = umin[i].vely - vl;
+    d1maxl = umax[i].vely - vl;
+    eps2nr = eps * volr;
+    d1minr = umin[j].vely - vr;
+    d1maxr = umax[j].vely - vr;
+    d2l = gradx[i].vely * rx + grady[i].vely * ry;
+    d2r = -gradx[j].vely * rx - grady[j].vely * ry;
+    if (d2l >= 0) {
+      limval = Nishikawa_R3(d1maxl / limRef.vely, d2l / limRef.vely, eps2nl);
+    } else {
+      limval = Nishikawa_R3(d1minl / limRef.vely, d2l / limRef.vely, eps2nl);
+    }
+    lim[i].vely = std::min(limval, lim[i].vely);
+
+    if (d2r >= 0) {
+      limval = Nishikawa_R3(d1maxr / limRef.vely, d2r / limRef.vely, eps2nr);
+    } else {
+      limval = Nishikawa_R3(d1minr / limRef.vely, d2r / limRef.vely, eps2nr);
+    }
+    lim[j].vely = std::min(limval, lim[j].vely);
+
+    eps2nl = eps * voll;
+    d1minl = umin[i].press - dv[i].press;
+    d1maxl = umax[i].press - dv[i].press;
+    eps2nr = eps * volr;
+    d1minr = umin[j].press - dv[j].press;
+    d1maxr = umax[j].press - dv[j].press;
+    d2l = gradx[i].press * rx + grady[i].press * ry;
+    d2r = -gradx[j].press * rx - grady[j].press * ry;
+    if (d2l >= 0) {
+      limval = Nishikawa_R3(d1maxl / limRef.press, d2l / limRef.press, eps2nl);
+    } else {
+      limval = Nishikawa_R3(d1minl / limRef.press, d2l / limRef.press, eps2nl);
+    }
+    lim[i].press = std::min(limval, lim[i].press);
+
+    if (d2r >= 0) {
+      limval = Nishikawa_R3(d1maxr / limRef.press, d2r / limRef.press, eps2nr);
+    } else {
+      limval = Nishikawa_R3(d1minr / limRef.press, d2r / limRef.press, eps2nr);
+    }
     lim[j].press = std::min(limval, lim[j].press);
   }
 

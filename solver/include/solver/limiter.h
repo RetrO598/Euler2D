@@ -1,4 +1,5 @@
 #pragma once
+#include <cmath>
 #include <pre/geometry.h>
 #include <pre/parameter.h>
 #include <solver/variableDef.h>
@@ -8,17 +9,17 @@
 namespace solver {
 
 class BaseLimiter {
- public:
+public:
   BaseLimiter(const preprocess::parameter &param,
               const preprocess::Geometry &geom, std::vector<CONS_VAR> &cv,
               std::vector<DEPEND_VAR> &dv, std::vector<PRIM_VAR> &umin,
               std::vector<PRIM_VAR> &umax, std::vector<PRIM_VAR> &lim,
               std::vector<PRIM_VAR> &gradx, std::vector<PRIM_VAR> &grady);
-  virtual void limiterRefVals() {};
-  virtual void limiterInit() {};
-  virtual void limiterUpdate() {};
+  void limiterRefVals();
+  void limiterInit();
+  virtual void limiterUpdate(){};
 
- protected:
+protected:
   std::vector<CONS_VAR> &cv;
   std::vector<DEPEND_VAR> &dv;
   std::vector<PRIM_VAR> &umin;
@@ -35,7 +36,7 @@ class BaseLimiter {
 };
 
 class VenkatakrishnanLimiter : public BaseLimiter {
- public:
+public:
   VenkatakrishnanLimiter(const preprocess::parameter &param,
                          const preprocess::Geometry &geom,
                          std::vector<CONS_VAR> &cv, std::vector<DEPEND_VAR> &dv,
@@ -44,11 +45,9 @@ class VenkatakrishnanLimiter : public BaseLimiter {
                          std::vector<PRIM_VAR> &lim,
                          std::vector<PRIM_VAR> &gradx,
                          std::vector<PRIM_VAR> &grady);
-  void limiterRefVals() override;
-  void limiterInit() override;
   void limiterUpdate() override;
 
-  double Venkat(double d2, double d1min, double d1max, double eps2) {
+  inline double Venkat(double d2, double d1min, double d1max, double eps2) {
     if (d2 > 1e-16) {
       double num = (d1max * d1max + eps2) * d2 + 2.0 * d2 * d2 * d1max;
       double den = d2 * (d1max * d1max + 2.0 * d2 * d2 + d1max * d2 + eps2);
@@ -61,4 +60,31 @@ class VenkatakrishnanLimiter : public BaseLimiter {
     return 1.0;
   }
 };
-}  // namespace solver
+
+class NishikawaR3 : public BaseLimiter {
+public:
+  NishikawaR3(const preprocess::parameter &param,
+              const preprocess::Geometry &geom, std::vector<CONS_VAR> &cv,
+              std::vector<DEPEND_VAR> &dv, std::vector<PRIM_VAR> &umin,
+              std::vector<PRIM_VAR> &umax, std::vector<PRIM_VAR> &lim,
+              std::vector<PRIM_VAR> &gradx, std::vector<PRIM_VAR> &grady);
+  void limiterUpdate() override;
+
+  inline double Nishikawa_R3(const double &delta_pos, const double &delta_neg,
+                             const double &eps) {
+    double a = std::abs(delta_pos);
+    double b = std::abs(delta_neg);
+
+    if (a > 2.0 * b) {
+      return 1.0;
+    } else {
+      double ap = std::pow(a, 3);
+      double bp = std::pow(b, 3);
+      double Sp = 4.0 * b * b;
+      double num = ap + eps + a * Sp;
+      double den = ap + eps + b * (std::pow(delta_pos, 2) + Sp);
+      return num / den;
+    }
+  }
+};
+} // namespace solver

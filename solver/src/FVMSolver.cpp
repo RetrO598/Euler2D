@@ -41,8 +41,7 @@ FVMSolver::FVMSolver(preprocess::parameter &parameter,
 
   cl = 0.0;
 
-  limiter = new VenkatakrishnanLimiter(param, geom, cv, dv, umin, umax, lim,
-                                       gradx, grady);
+  limiter = new NishikawaR3(param, geom, cv, dv, umin, umax, lim, gradx, grady);
 
   numeric = new NumericRoe(param, geom, cv, dv, diss, rhs, lim, gradx, grady);
 
