@@ -3,34 +3,34 @@
 namespace preprocess {
 #define fileEOF "end of file"
 
-struct NODE {
+struct Node {
   double x, y;
 };
 
-struct TRIA {
+struct Tria {
   int node[3];
 };
 
-struct EDGE {
+struct Edge {
   int nodei, nodej;
 };
-struct BOUNDFACE {
+struct BoundaryFace {
   int nodei, nodej;
 };
-struct BOUNDNODE {
+struct BoundaryNode {
   int node, dummy, indexEdge;
 };
 
-struct IBOUND {
+struct idBoundary {
   int bfaceIndex, bnodeIndex;
 };
 
-struct EDGEI {
+struct EdgeI {
   int j, edge;
-  EDGEI *next;
+  EdgeI *next;
 };
 
-struct EDGELIST {
-  EDGEI *list;
+struct EdgeList {
+  EdgeI *list;
 };
-}  // namespace preprocess
+} // namespace preprocess

@@ -10,15 +10,8 @@ BaseNumeric::BaseNumeric(const preprocess::parameter &param,
                          std::vector<CONS_VAR> &rhs, std::vector<PRIM_VAR> &lim,
                          std::vector<PRIM_VAR> &gradx,
                          std::vector<PRIM_VAR> &grady)
-    : param(param),
-      geom(geom),
-      cv(cv),
-      dv(dv),
-      diss(diss),
-      rhs(rhs),
-      lim(lim),
-      gradx(gradx),
-      grady(grady) {}
+    : param(param), geom(geom), cv(cv), dv(dv), diss(diss), rhs(rhs), lim(lim),
+      gradx(gradx), grady(grady) {}
 
 void BaseNumeric::DissipInit(const int &irk, const double &beta) {
   if (irk == 0 || beta > 0.99) {
@@ -45,8 +38,8 @@ void BaseNumeric::FluxWalls() {
     int iendf = geom.ibound[ib].bfaceIndex;
     if (geom.BoundTypes[ib] >= 300 && geom.BoundTypes[ib] < 500) {
       for (int ibf = ibegf; ibf <= iendf; ++ibf) {
-        int i = geom.boundFace[ibf].nodei;
-        int j = geom.boundFace[ibf].nodej;
+        int i = geom.boundaryFace[ibf].nodei;
+        int j = geom.boundaryFace[ibf].nodej;
         double sx = geom.sbf[ibf].x / 12.0;
         double sy = geom.sbf[ibf].y / 12.0;
         double pl = 5.0 * dv[i].press + dv[j].press;
@@ -232,4 +225,4 @@ void NumericRoe::FluxNumeric() {
 
   FluxWalls();
 }
-}  // namespace solver
+} // namespace solver

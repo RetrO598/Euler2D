@@ -10,19 +10,19 @@ void FVMSolver::ZeroRes() {
     if (geom.BoundTypes[ib] >= 500 && geom.BoundTypes[ib] < 600) {
       if (geom.BoundTypes[ib] - 500 < 2) {
         for (int ibn = ibegn; ibn <= iendn; ++ibn) {
-          int i = geom.boundNode[ibn].node;
+          int i = geom.boundaryNode[ibn].node;
           rhs[i].xmom = 0.0;
         }
       } else {
         for (int ibn = ibegn; ibn <= iendn; ++ibn) {
-          int i = geom.boundNode[ibn].node;
+          int i = geom.boundaryNode[ibn].node;
           rhs[i].ymom = 0.0;
         }
       }
     } else if ((geom.BoundTypes[ib] >= 300 && geom.BoundTypes[ib] < 400) &&
                param.equationtype_ == preprocess::equationType::NavierStokes) {
       for (int ibn = ibegn; ibn <= iendn; ++ibn) {
-        int i = geom.boundNode[ib].node;
+        int i = geom.boundaryNode[ib].node;
         rhs[i].xmom = 0.0;
         rhs[i].ymom = 0.0;
       }
@@ -93,4 +93,4 @@ void FVMSolver::Irsmoo() {
     }
   }
 }
-}  // namespace solver
+} // namespace solver

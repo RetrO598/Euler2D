@@ -44,15 +44,20 @@ void FVMSolver::Convergence() {
     MassFlow();
   }
   if (param.flowtype_ == preprocess::flowType::External) {
-    std::cout << "iter: " << iter << " " << "drho: " << std::log10(drho) << " "
-              << "drmax: " << drmax << " " << "idr: " << idr << " "
-              << "cl: " << cl << " " << "cd: " << cd << " " << "cm: " << cm
-              << "\n";
+    std::cout << "iter: " << iter << " "
+              << "drho: " << std::log10(drho) << " "
+              << "drmax: " << drmax << " "
+              << "idr: " << idr << " "
+              << "cl: " << cl << " "
+              << "cd: " << cd << " "
+              << "cm: " << cm << "\n";
   } else {
-    std::cout << "iter: " << iter << " " << "drho: " << std::log10(drho) << " "
-              << "drmax: " << drmax << " " << "idr: " << idr << " "
-              << "Mass Flow: " << mflow << " " << "Mass Flow Ratio: " << mfratio
-              << "\n";
+    std::cout << "iter: " << iter << " "
+              << "drho: " << std::log10(drho) << " "
+              << "drmax: " << drmax << " "
+              << "idr: " << idr << " "
+              << "Mass Flow: " << mflow << " "
+              << "Mass Flow Ratio: " << mfratio << "\n";
   }
 }
 
@@ -65,8 +70,8 @@ void FVMSolver::Forces() {
     int iendf = geom.ibound[ib].bfaceIndex;
     if (geom.BoundTypes[ib] >= 300 && geom.BoundTypes[ib] < 500) {
       for (int ibf = ibegf; ibf <= iendf; ++ibf) {
-        int n1 = geom.boundFace[ibf].nodei;
-        int n2 = geom.boundFace[ibf].nodej;
+        int n1 = geom.boundaryFace[ibf].nodei;
+        int n2 = geom.boundaryFace[ibf].nodej;
         double sx = geom.sbf[ibf].x;
         double sy = geom.sbf[ibf].y;
         double pwall = 0.5 * (dv[n1].press + dv[n2].press);
@@ -106,8 +111,8 @@ void FVMSolver::MassFlow() {
     int iendf = geom.ibound[ib].bfaceIndex;
     if (geom.BoundTypes[ib] >= 100 && geom.BoundTypes[ib] < 300) {
       for (int ibf = ibegf; ibf <= iendf; ++ibf) {
-        int n1 = geom.boundFace[ibf].nodei;
-        int n2 = geom.boundFace[ibf].nodej;
+        int n1 = geom.boundaryFace[ibf].nodei;
+        int n2 = geom.boundaryFace[ibf].nodej;
         double sx = geom.sbf[ibf].x;
         double sy = geom.sbf[ibf].y;
         mass = 0.5 * ((cv[n1].xmom + cv[n2].xmom) * sx +
@@ -133,4 +138,4 @@ void FVMSolver::MassFlow() {
     mfratio = 1.0;
   }
 }
-}  // namespace solver
+} // namespace solver

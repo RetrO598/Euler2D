@@ -70,8 +70,8 @@ void FVMSolver::Gradients() {
 
     if (flag) {
       for (int ibf = ibegf; ibf <= iendf; ++ibf) {
-        int i = geom.boundFace[ibf].nodei;
-        int j = geom.boundFace[ibf].nodej;
+        int i = geom.boundaryFace[ibf].nodei;
+        int j = geom.boundaryFace[ibf].nodej;
         double sx = geom.sbf[ibf].x / 12.0;
         double sy = geom.sbf[ibf].y / 12.0;
 
@@ -115,7 +115,7 @@ void FVMSolver::Gradients() {
     if (geom.BoundTypes[ib] >= 500 && geom.BoundTypes[ib] < 600) {
       if ((geom.BoundTypes[ib] - 500) < 2) {
         for (int ibn = ibegn; ibn <= iendn; ++ibn) {
-          int i = geom.boundNode[ibn].node;
+          int i = geom.boundaryNode[ibn].node;
           gradx[i].dens = 0.0;
           grady[i].velx = 0.0;
           gradx[i].vely = 0.0;
@@ -123,7 +123,7 @@ void FVMSolver::Gradients() {
         }
       } else {
         for (int ibn = ibegn; ibn <= iendn; ++ibn) {
-          int i = geom.boundNode[ibn].node;
+          int i = geom.boundaryNode[ibn].node;
           grady[i].dens = 0.0;
           grady[i].velx = 0.0;
           gradx[i].vely = 0.0;
@@ -149,4 +149,4 @@ void FVMSolver::Gradients() {
     grady[i].press /= geom.vol[i];
   }
 }
-}  // namespace solver
+} // namespace solver

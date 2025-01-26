@@ -15,15 +15,8 @@ BaseLimiter::BaseLimiter(const preprocess::parameter &param,
                          std::vector<PRIM_VAR> &lim,
                          std::vector<PRIM_VAR> &gradx,
                          std::vector<PRIM_VAR> &grady)
-    : param(param),
-      geom(geom),
-      cv(cv),
-      dv(dv),
-      umin(umin),
-      umax(umax),
-      lim(lim),
-      gradx(gradx),
-      grady(grady) {}
+    : param(param), geom(geom), cv(cv), dv(dv), umin(umin), umax(umax),
+      lim(lim), gradx(gradx), grady(grady) {}
 
 VenkatakrishnanLimiter::VenkatakrishnanLimiter(
     const preprocess::parameter &param, const preprocess::Geometry &geom,
@@ -119,8 +112,8 @@ void VenkatakrishnanLimiter::limiterInit() {
     int iendn = geom.ibound[ib].bnodeIndex;
     if (geom.BoundTypes[ib] >= 700 && geom.BoundTypes[ib] < 800) {
       for (int ibn = ibegn; ibn <= iendn; ++ibn) {
-        int i = geom.boundNode[ibn].node;
-        int j = geom.boundNode[ibn].dummy;
+        int i = geom.boundaryNode[ibn].node;
+        int j = geom.boundaryNode[ibn].dummy;
 
         umin[i].dens = std::min(umin[i].dens, umin[j].dens);
         umin[i].velx = std::min(umin[i].velx, umin[j].velx);
@@ -235,8 +228,8 @@ void VenkatakrishnanLimiter::limiterUpdate() {
     int iendn = geom.ibound[ib].bnodeIndex;
     if (geom.BoundTypes[ib] >= 700 && geom.BoundTypes[ib] < 800) {
       for (int ibn = ibegn; ibn <= iendn; ++ibn) {
-        int i = geom.boundNode[ibn].node;
-        int j = geom.boundNode[ibn].dummy;
+        int i = geom.boundaryNode[ibn].node;
+        int j = geom.boundaryNode[ibn].dummy;
 
         lim[i].dens = std::min(lim[i].dens, lim[j].dens);
         lim[i].velx = std::min(lim[i].velx, lim[j].velx);
@@ -254,4 +247,4 @@ void VenkatakrishnanLimiter::limiterUpdate() {
   }
 }
 
-}  // namespace solver
+} // namespace solver

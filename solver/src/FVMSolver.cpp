@@ -105,8 +105,8 @@ void FVMSolver::initSolver() {
     int iendn = geom.ibound[ib].bnodeIndex;
     if (geom.BoundTypes[ib] >= 700 && geom.BoundTypes[ib] < 800) {
       for (int ibn = ibegn; ibn <= iendn; ++ibn) {
-        int i = geom.boundNode[ibn].node;
-        int j = geom.boundNode[ibn].dummy;
+        int i = geom.boundaryNode[ibn].node;
+        int j = geom.boundaryNode[ibn].dummy;
         cv[i].dens = 0.5 * (cv[i].dens + cv[j].dens);
         cv[i].xmom = 0.5 * (cv[i].xmom + cv[j].xmom);
         cv[i].ymom = 0.5 * (cv[i].ymom + cv[j].ymom);
@@ -182,4 +182,4 @@ void FVMSolver::ConvToDepend(int i) {
     dvlam[i].lambda = dvlam[i].mu * (param.Cp / param.Prandtl);
   }
 }
-}  // namespace solver
+} // namespace solver

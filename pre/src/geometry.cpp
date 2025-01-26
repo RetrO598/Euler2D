@@ -1,4 +1,3 @@
-
 #include <pre/geometry.h>
 
 #include <algorithm>
@@ -27,15 +26,14 @@ Geometry::Geometry(const std::string &filename, const std::string &commentChar)
   bname = nullptr;
   tria = nullptr;
   edge = nullptr;
-  boundFace = nullptr;
-  boundNode = nullptr;
+  boundaryFace = nullptr;
+  boundaryNode = nullptr;
   ibound = nullptr;
   coords = nullptr;
   sij = nullptr;
   vol = nullptr;
   sbf = nullptr;
   sproj = nullptr;
-  fnameGrid.clear();
 
   tmpElist = nullptr;
 }
@@ -45,8 +43,8 @@ Geometry::~Geometry() {
   delete[] bname;
   delete[] tria;
   delete[] edge;
-  delete[] boundFace;
-  delete[] boundNode;
+  delete[] boundaryFace;
+  delete[] boundaryNode;
   delete[] ibound;
   delete[] coords;
   delete[] sij;
@@ -64,7 +62,7 @@ void Geometry::ReadGrid() {
 
   BoundTypes = new int[numBoundSegs];
   bname = new std::string[numBoundSegs];
-  ibound = new IBOUND[numBoundSegs];
+  ibound = new idBoundary[numBoundSegs];
 
   for (int ib = 0; ib < numBoundSegs; ++ib) {
     str = gridReader.readLineFiltered();
@@ -78,62 +76,64 @@ void Geometry::ReadGrid() {
   numBoundFaces = ibound[numBoundSegs - 1].bfaceIndex + 1;
   numBoundNodes = ibound[numBoundSegs - 1].bnodeIndex + 1;
 
-  boundNode = new BOUNDNODE[numBoundNodes];
-  boundFace = new BOUNDFACE[numBoundFaces];
+  boundaryNode = new BoundaryNode[numBoundNodes];
+  boundaryFace = new BoundaryFace[numBoundFaces];
 
-  for (size_t i = 0; i < numBoundNodes; ++i) {
-    boundNode[i].node = -777;
-    boundNode[i].dummy = -777;
-    boundNode[i].indexEdge = -777;
+  for (int i = 0; i < numBoundNodes; ++i) {
+    boundaryNode[i].node = -777;
+    boundaryNode[i].dummy = -777;
+    boundaryNode[i].indexEdge = -777;
   }
 
-  for (size_t i = 0; i < numBoundFaces; ++i) {
-    boundFace[i].nodei = -777;
-    boundFace[i].nodej = -777;
+  for (int i = 0; i < numBoundFaces; ++i) {
+    boundaryFace[i].nodei = -777;
+    boundaryFace[i].nodej = -777;
   }
 
-  size_t ibegf = 0;
-  size_t iendf = 0;
-  size_t ibegn = 0;
-  size_t iendn = 0;
+  int ibegf = 0;
+  int iendf = 0;
+  int ibegn = 0;
+  int iendn = 0;
   for (int i = 0; i < numBoundSegs; ++i) {
     iendf = ibound[i].bfaceIndex;
     iendn = ibound[i].bnodeIndex;
     if (BoundTypes[i] >= 700 && BoundTypes[i] < 800) {
-      for (size_t ibn = ibegn; ibn <= iendn; ++ibn) {
+      for (int ibn = ibegn; ibn <= iendn; ++ibn) {
         str = gridReader.readLineFiltered();
-        std::stringstream(str) >> boundNode[ibn].node >> boundNode[ibn].dummy;
-        boundNode[ibn].node--;
-        boundNode[ibn].dummy--;
+        std::stringstream(str) >> boundaryNode[ibn].node >>
+            boundaryNode[ibn].dummy;
+        boundaryNode[ibn].node--;
+        boundaryNode[ibn].dummy--;
       }
     } else {
-      for (size_t ibf = ibegf; ibf <= iendf; ++ibf) {
+      for (int ibf = ibegf; ibf <= iendf; ++ibf) {
         str = gridReader.readLineFiltered();
-        std::stringstream(str) >> boundFace[ibf].nodei >> boundFace[ibf].nodej;
-        boundFace[ibf].nodei--;
-        boundFace[ibf].nodej--;
+        std::stringstream(str) >> boundaryFace[ibf].nodei >>
+            boundaryFace[ibf].nodej;
+        boundaryFace[ibf].nodei--;
+        boundaryFace[ibf].nodej--;
       }
     }
     ibegf = iendf + 1;
     ibegn = iendn + 1;
   }
 
-  for (size_t i = 0; i < numBoundFaces; ++i) {
-    if (boundFace[i].nodei < 0 || boundFace[i].nodej < 0) {
+  for (int i = 0; i < numBoundFaces; ++i) {
+    if (boundaryFace[i].nodei < 0 || boundaryFace[i].nodej < 0) {
       throw std::runtime_error("incompletely defined array boundFace[]");
     }
   }
 
   DummyNodes();
 
-  coords = new NODE[totNodes];
+  coords = new Node[totNodes];
 
   for (int i = 0; i < phyNodes; ++i) {
     str = gridReader.readLineFiltered();
     std::stringstream(str) >> coords[i].x >> coords[i].y;
   }
 
-  tria = new TRIA[numTria];
+  tria = new Tria[numTria];
 
   for (int i = 0; i < numTria; ++i) {
     str = gridReader.readLineFiltered();
@@ -163,19 +163,15 @@ void Geometry::DummyNodes() {
     iendf = ibound[ib].bfaceIndex;
     iendn = ibound[ib].bnodeIndex;
     itype = BoundTypes[ib];
-    flag = false;
-    if (itype >= 100 && itype < 200) flag = true;
-    if (itype >= 200 && itype < 300) flag = true;
-    if (itype >= 600 && itype < 700) flag = true;
+    flag = (itype >= 100 && itype < 200) || (itype >= 200 && itype < 300) ||
+           (itype >= 600 && itype < 700);
 
     if (itype < 700 || itype >= 800) {
-      for (int i = 0; i < phyNodes; ++i) {
-        marker[i] = false;
-      }
+      std::fill(marker, marker + phyNodes, false);
 
       for (int i = ibegf; i <= iendf; ++i) {
-        marker[boundFace[i].nodei] = true;
-        marker[boundFace[i].nodej] = true;
+        marker[boundaryFace[i].nodei] = true;
+        marker[boundaryFace[i].nodej] = true;
       }
 
       for (int i = 0; i < phyNodes; ++i) {
@@ -183,13 +179,11 @@ void Geometry::DummyNodes() {
           if (ibegn >= numBoundNodes) {
             throw std::runtime_error("Max. number of boundary nodes exceeded.");
           }
+          boundaryNode[ibegn].node = i;
           if (flag) {
-            boundNode[ibegn].node = i;
-            boundNode[ibegn].dummy = phyNodes + idn;
-            boundNode[ibegn].indexEdge = -1;
+            boundaryNode[ibegn].dummy = phyNodes + idn;
+            boundaryNode[ibegn].indexEdge = -1;
             idn++;
-          } else {
-            boundNode[ibegn].node = i;
           }
           ibegn++;
         }
@@ -215,8 +209,8 @@ void Geometry::DummyNodes() {
 void Geometry::GenerateEdgeList() {
   bool quit;
   int i, j, d, ibn, ie, it, n;
-  EDGEI *point, *prev;
-  tmpElist = new EDGELIST[phyNodes];
+  EdgeI *point, *prev;
+  tmpElist = new EdgeList[phyNodes];
 
   for (int i = 0; i < phyNodes; ++i) {
     tmpElist[i].list = nullptr;
@@ -241,7 +235,7 @@ void Geometry::GenerateEdgeList() {
 
       if (tmpElist[i].list == nullptr) {
         phyEdges++;
-        tmpElist[i].list = new EDGEI;
+        tmpElist[i].list = new EdgeI;
         tmpElist[i].list->j = j;
         tmpElist[i].list->edge = -1;
         tmpElist[i].list->next = nullptr;
@@ -252,7 +246,7 @@ void Geometry::GenerateEdgeList() {
         do {
           if (point == nullptr) {
             phyEdges++;
-            point = new EDGEI;
+            point = new EdgeI;
             point->j = j;
             point->edge = -1;
             point->next = nullptr;
@@ -270,7 +264,7 @@ void Geometry::GenerateEdgeList() {
 
   totEdges = phyEdges + totNodes - phyNodes;
 
-  edge = new EDGE[totEdges];
+  edge = new Edge[totEdges];
 
   ie = 0;
 
@@ -290,10 +284,10 @@ void Geometry::GenerateEdgeList() {
   }
 
   for (ibn = 0; ibn < numBoundNodes; ++ibn) {
-    if (boundNode[ibn].indexEdge == -1) {
-      edge[ie].nodei = boundNode[ibn].node;
-      edge[ie].nodej = boundNode[ibn].dummy;
-      boundNode[ibn].indexEdge = ie;
+    if (boundaryNode[ibn].indexEdge == -1) {
+      edge[ie].nodei = boundaryNode[ibn].node;
+      edge[ie].nodej = boundaryNode[ibn].dummy;
+      boundaryNode[ibn].indexEdge = ie;
       ie++;
     }
   }
@@ -314,10 +308,10 @@ void Geometry::printInfo() {
 }
 
 void Geometry::ComputeMetrics() {
-  sij = new NODE[totEdges];
+  sij = new Node[totEdges];
   vol = new double[totNodes];
-  sbf = new NODE[numBoundFaces];
-  sproj = new NODE[totNodes];
+  sbf = new Node[numBoundFaces];
+  sproj = new Node[totNodes];
 
   FaceVectorsVolumes();
 
@@ -335,16 +329,12 @@ void Geometry::ComputeMetrics() {
 void Geometry::FaceVectorsVolumes() {
   int d, i, j, ie, it, n;
   double x1, y1, x2, y2, x3, y3, area, pvol, cx, cy, sx, sy, vprod;
-  EDGEI *point;
+  EdgeI *point;
 
-  for (ie = 0; ie < totEdges; ++ie) {
-    sij[ie].x = 0.0;
-    sij[ie].y = 0.0;
-  }
+  Node node{0.0, 0.0};
 
-  for (i = 0; i < totNodes; ++i) {
-    vol[i] = 0.0;
-  }
+  std::fill(sij, sij + totEdges, node);
+  std::fill(vol, vol + totNodes, 0.0);
 
   for (it = 0; it < numTria; ++it) {
     x1 = coords[tria[it].node[0]].x;
@@ -409,7 +399,7 @@ void Geometry::FaceVectorsVolumes() {
 
 void Geometry::DeleteTmpElist() {
   int i;
-  EDGEI *point, *prev;
+  EdgeI *point, *prev;
 
   if (tmpElist == nullptr) {
     return;
@@ -441,8 +431,8 @@ void Geometry::FaceVectorsVolumesBound() {
     iendn = ibound[ib].bnodeIndex;
     if (BoundTypes[ib] >= 700 && BoundTypes[ib] < 800) {
       for (ibn = ibegn; ibn <= iendn; ++ibn) {
-        i = boundNode[ibn].node;
-        j = boundNode[ibn].dummy;
+        i = boundaryNode[ibn].node;
+        j = boundaryNode[ibn].dummy;
         vol[i] += vol[j];
         vol[j] = vol[i];
       }
@@ -452,19 +442,15 @@ void Geometry::FaceVectorsVolumesBound() {
 
   marker = new bool[phyNodes];
 
-  for (i = 0; i < phyNodes; ++i) {
-    marker[i] = false;
-  }
+  std::fill(marker, marker + phyNodes, false);
 
   for (ibf = 0; ibf < numBoundFaces; ++ibf) {
-    marker[boundFace[ibf].nodei] = true;
-    marker[boundFace[ibf].nodej] = true;
+    marker[boundaryFace[ibf].nodei] = true;
+    marker[boundaryFace[ibf].nodej] = true;
   }
 
   btria = new int[numBoundFaces];
-  for (ibf = 0; ibf < numBoundFaces; ++ibf) {
-    btria[ibf] = -1;
-  }
+  std::fill(btria, btria + numBoundFaces, -1);
 
   for (n = 0; n < 3; ++n) {
     for (it = 0; it < numTria; ++it) {
@@ -484,8 +470,8 @@ void Geometry::FaceVectorsVolumesBound() {
       if (marker[i] && marker[j]) {
         for (ibf = 0; ibf < numBoundFaces; ++ibf) {
           if (btria[ibf] < 0) {
-            n1 = boundFace[ibf].nodei;
-            n2 = boundFace[ibf].nodej;
+            n1 = boundaryFace[ibf].nodei;
+            n2 = boundaryFace[ibf].nodej;
             if (n1 > n2) {
               d = n1;
               n1 = n2;
@@ -507,8 +493,8 @@ void Geometry::FaceVectorsVolumesBound() {
   }
 
   for (ibf = 0; ibf < numBoundFaces; ++ibf) {
-    n1 = boundFace[ibf].nodei;
-    n2 = boundFace[ibf].nodej;
+    n1 = boundaryFace[ibf].nodei;
+    n2 = boundaryFace[ibf].nodej;
     sbf[ibf].x = coords[n2].y - coords[n1].y;
     sbf[ibf].y = coords[n1].x - coords[n2].x;
 
@@ -536,23 +522,21 @@ void Geometry::FaceVectorsVolumesBound() {
     iendf = ibound[ib].bfaceIndex;
     iendn = ibound[ib].bnodeIndex;
     itype = BoundTypes[ib];
-    flag = false;
-    if (itype >= 100 && itype < 200) flag = true;
-    if (itype >= 200 && itype < 300) flag = true;
-    if (itype >= 600 && itype < 700) flag = true;
+    flag = (itype >= 100 && itype < 200) || (itype >= 200 && itype < 300) ||
+           (itype >= 600 && itype < 700);
 
     if (flag) {
       for (ibf = ibegf; ibf <= iendf; ++ibf) {
-        n1 = boundFace[ibf].nodei;
-        n2 = boundFace[ibf].nodej;
+        n1 = boundaryFace[ibf].nodei;
+        n2 = boundaryFace[ibf].nodej;
         for (ibn = ibegn; ibn <= iendn; ++ibn) {
-          if (boundNode[ibn].node == n1) {
-            ie = boundNode[ibn].indexEdge;
+          if (boundaryNode[ibn].node == n1) {
+            ie = boundaryNode[ibn].indexEdge;
             n1 = -777;
             sij[ie].x += 0.5 * sbf[ibf].x;
             sij[ie].y += 0.5 * sbf[ibf].y;
-          } else if (boundNode[ibn].node == n2) {
-            ie = boundNode[ibn].indexEdge;
+          } else if (boundaryNode[ibn].node == n2) {
+            ie = boundaryNode[ibn].indexEdge;
             n2 = -777;
             sij[ie].x += 0.5 * sbf[ibf].x;
             sij[ie].y += 0.5 * sbf[ibf].y;
@@ -580,7 +564,7 @@ void Geometry::FaceVectorsVolumesBound() {
 void Geometry::CheckMetrics() {
   int i, j, ib, ibf, ibn, ie, ibegf, iendf, ibegn, iendn;
   double volmin, volmax, s, smax;
-  NODE *fvecSum;
+  Node *fvecSum;
 
   volmin = +1.0e+32;
   volmax = -1.0e+32;
@@ -590,11 +574,9 @@ void Geometry::CheckMetrics() {
     volmax = std::max(volmax, vol[i]);
   }
 
-  fvecSum = new NODE[phyNodes];
-  for (i = 0; i < phyNodes; ++i) {
-    fvecSum[i].x = 0.0;
-    fvecSum[i].y = 0.0;
-  }
+  fvecSum = new Node[phyNodes];
+  Node node{0.0, 0.0};
+  std::fill(fvecSum, fvecSum + phyNodes, node);
 
   for (ie = 0; ie < phyEdges; ++ie) {
     i = edge[ie].nodei;
@@ -610,8 +592,8 @@ void Geometry::CheckMetrics() {
     iendf = ibound[ib].bfaceIndex;
     if (BoundTypes[ib] < 700 || BoundTypes[ib] >= 800) {
       for (ibf = ibegf; ibf <= iendf; ++ibf) {
-        i = boundFace[ibf].nodei;
-        j = boundFace[ibf].nodej;
+        i = boundaryFace[ibf].nodei;
+        j = boundaryFace[ibf].nodej;
         fvecSum[i].x += 0.5 * sbf[ibf].x;
         fvecSum[i].y += 0.5 * sbf[ibf].y;
         fvecSum[j].x += 0.5 * sbf[ibf].x;
@@ -627,8 +609,8 @@ void Geometry::CheckMetrics() {
     iendn = ibound[ib].bnodeIndex;
     if (BoundTypes[ib] >= 700 && BoundTypes[ib] < 800) {
       for (ibn = ibegn; ibn <= iendn; ++ibn) {
-        i = boundNode[ibn].node;
-        j = boundNode[ibn].dummy;
+        i = boundaryNode[ibn].node;
+        j = boundaryNode[ibn].dummy;
         fvecSum[i].x += fvecSum[j].x;
         fvecSum[i].y += fvecSum[j].y;
         fvecSum[j].x = fvecSum[i].x;
@@ -658,9 +640,7 @@ void Geometry::FaceVectorsSymm() {
 
   marker = new int[phyNodes];
 
-  for (i = 0; i < phyNodes; ++i) {
-    marker[i] = -1;
-  }
+  std::fill(marker, marker + phyNodes, -1);
 
   ibegf = 0;
   ibegn = 0;
@@ -681,7 +661,7 @@ void Geometry::FaceVectorsSymm() {
       }
 
       for (ibn = ibegn; ibn <= iendn; ++ibn) {
-        marker[boundNode[ibn].node] = BoundTypes[ib] - 500;
+        marker[boundaryNode[ibn].node] = BoundTypes[ib] - 500;
       }
     }
     ibegf = iendf + 1;
@@ -692,9 +672,9 @@ void Geometry::FaceVectorsSymm() {
     i = edge[ie].nodei;
     j = edge[ie].nodej;
     if (marker[i] != -1 && marker[j] != -1) {
-      if (marker[i] < 2)  // x=const. plane
+      if (marker[i] < 2) // x=const. plane
         sij[ie].x = 0.0;
-      else  // y=const. plane
+      else // y=const. plane
         sij[ie].y = 0.0;
     }
   }
@@ -727,8 +707,8 @@ void Geometry::volumeProjections() {
     iendf = ibound[ib].bfaceIndex;
     if (BoundTypes[ib] < 700 || BoundTypes[ib] >= 800) {
       for (ibf = ibegf; ibf <= iendf; ++ibf) {
-        i = boundFace[ibf].nodei;
-        j = boundFace[ibf].nodej;
+        i = boundaryFace[ibf].nodei;
+        j = boundaryFace[ibf].nodej;
         sx = 0.25 * std::fabs(sbf[ibf].x);
         sy = 0.25 * std::fabs(sbf[ibf].y);
         sproj[i].x += sx;
@@ -745,8 +725,8 @@ void Geometry::volumeProjections() {
     iendn = ibound[ib].bnodeIndex;
     if (BoundTypes[ib] >= 700 && BoundTypes[ib] < 800) {
       for (ibn = ibegn; ibn <= iendn; ibn++) {
-        i = boundNode[ibn].node;
-        j = boundNode[ibn].dummy;
+        i = boundaryNode[ibn].node;
+        j = boundaryNode[ibn].dummy;
         sproj[i].x += sproj[j].x;
         sproj[i].y += sproj[j].y;
         sproj[j].x = sproj[i].x;
@@ -794,4 +774,4 @@ void Geometry::outputMeshInfo() {
 
   outputFile5.close();
 }
-}  // namespace preprocess
+} // namespace preprocess

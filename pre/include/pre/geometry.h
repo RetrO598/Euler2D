@@ -6,31 +6,30 @@
 namespace preprocess {
 
 class Geometry {
- public:
+public:
   int totNodes, phyNodes, totEdges, phyEdges, numTria, numBoundSegs,
       numBoundFaces, numBoundNodes;
 
   int *BoundTypes;
 
-  TRIA *tria;
+  Tria *tria;
 
-  EDGE *edge;
+  Edge *edge;
 
-  BOUNDFACE *boundFace;
+  BoundaryFace *boundaryFace;
 
-  BOUNDNODE *boundNode;
+  BoundaryNode *boundaryNode;
 
-  IBOUND *ibound;
+  idBoundary *ibound;
 
-  NODE *coords;
-  NODE *sij;
+  Node *coords;
+  Node *sij;
 
   double *vol;
 
-  NODE *sbf;
-  NODE *sproj;
+  Node *sbf;
+  Node *sproj;
 
-  std::string fnameGrid;
   std::string *bname;
 
   Geometry(const std::string &filename, const std::string &commentChar = "#");
@@ -47,9 +46,9 @@ class Geometry {
   void ReadGrid();
   void outputMeshInfo();
 
- private:
+private:
   simpleReader gridReader;
-  EDGELIST *tmpElist;
+  EdgeList *tmpElist;
 
   void CheckMetrics();
   void DeleteTmpElist();
@@ -59,4 +58,4 @@ class Geometry {
   void FaceVectorsVolumesBound();
   void volumeProjections();
 };
-}  // namespace preprocess
+} // namespace preprocess

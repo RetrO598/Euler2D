@@ -33,9 +33,9 @@ void FVMSolver::BoundaryConditions() {
 
 void FVMSolver::BoundInflow(int beg, int end) {
   for (int ib = beg; ib <= end; ++ib) {
-    int ibn = geom.boundNode[ib].node;
-    int idn = geom.boundNode[ib].dummy;
-    int ie = geom.boundNode[ib].indexEdge;
+    int ibn = geom.boundaryNode[ib].node;
+    int idn = geom.boundaryNode[ib].dummy;
+    int ie = geom.boundaryNode[ib].indexEdge;
 
     double ds = std::sqrt(geom.sij[ie].x * geom.sij[ie].x +
                           geom.sij[ie].y * geom.sij[ie].y);
@@ -88,9 +88,9 @@ void FVMSolver::BoundFarfield(int beg, int end) {
     double bet = std::sqrt(1.0 - param.MaInfinity * param.MaInfinity);
     double cir = 0.25 * param.chord * cl * param.velInfinity / M_PI;
     for (int ib = beg; ib <= end; ++ib) {
-      int ibn = geom.boundNode[ib].node;
-      int idn = geom.boundNode[ib].dummy;
-      int ie = geom.boundNode[ib].indexEdge;
+      int ibn = geom.boundaryNode[ib].node;
+      int idn = geom.boundaryNode[ib].dummy;
+      int ie = geom.boundaryNode[ib].indexEdge;
 
       double gam1 = dv[ibn].gamma - 1.0;
       double ggm1 = dv[ibn].gamma / gam1;
@@ -178,9 +178,9 @@ void FVMSolver::BoundFarfield(int beg, int end) {
     }
   } else {
     for (int ib = beg; ib <= end; ++ib) {
-      int ibn = geom.boundNode[ib].node;
-      int idn = geom.boundNode[ib].dummy;
-      int ie = geom.boundNode[ib].indexEdge;
+      int ibn = geom.boundaryNode[ib].node;
+      int idn = geom.boundaryNode[ib].dummy;
+      int ie = geom.boundaryNode[ib].indexEdge;
 
       double gam1 = dv[ibn].gamma - 1.0;
       farfield.dens = param.RhoInfinity;
@@ -252,9 +252,9 @@ void FVMSolver::BoundFarfield(int beg, int end) {
 
 void FVMSolver::BoundOutflow(int beg, int end) {
   for (int ib = beg; ib <= end; ++ib) {
-    int ibn = geom.boundNode[ib].node;
-    int idn = geom.boundNode[ib].dummy;
-    int ie = geom.boundNode[ib].indexEdge;
+    int ibn = geom.boundaryNode[ib].node;
+    int idn = geom.boundaryNode[ib].dummy;
+    int ie = geom.boundaryNode[ib].indexEdge;
 
     double ds = std::sqrt(geom.sij[ie].x * geom.sij[ie].x +
                           geom.sij[ie].y * geom.sij[ie].y);
@@ -298,7 +298,7 @@ void FVMSolver::BoundOutflow(int beg, int end) {
 
 void FVMSolver::BoundWallVisc(int beg, int end) {
   for (int ib = beg; ib <= end; ++ib) {
-    int ibn = geom.boundNode[ib].node;
+    int ibn = geom.boundaryNode[ib].node;
 
     cv[ibn].xmom = 0.0;
     cv[ibn].ymom = 0.0;
@@ -313,8 +313,8 @@ void FVMSolver::PeriodicPrim(std::vector<PRIM_VAR> &var) {
     int iendn = geom.ibound[ib].bnodeIndex;
     if (geom.BoundTypes[ib] >= 700 && geom.BoundTypes[ib] < 800) {
       for (int ibn = ibegn; ibn <= iendn; ++ibn) {
-        int i = geom.boundNode[ibn].node;
-        int j = geom.boundNode[ibn].dummy;
+        int i = geom.boundaryNode[ibn].node;
+        int j = geom.boundaryNode[ibn].dummy;
 
         var[i].dens += var[j].dens;
         var[i].velx += var[j].velx;
@@ -336,8 +336,8 @@ void FVMSolver::PeriodicCons(std::vector<CONS_VAR> &var) {
     int iendn = geom.ibound[ib].bnodeIndex;
     if (geom.BoundTypes[ib] >= 700 && geom.BoundTypes[ib] < 800) {
       for (int ibn = ibegn; ibn <= iendn; ++ibn) {
-        int i = geom.boundNode[ibn].node;
-        int j = geom.boundNode[ibn].dummy;
+        int i = geom.boundaryNode[ibn].node;
+        int j = geom.boundaryNode[ibn].dummy;
         var[i].dens += var[j].dens;
         var[i].xmom += var[j].xmom;
         var[i].ymom += var[j].ymom;
@@ -361,8 +361,8 @@ void FVMSolver::PeriodicInt(std::vector<int> &var) {
     iendn = geom.ibound[ib].bnodeIndex;
     if (geom.BoundTypes[ib] >= 700 && geom.BoundTypes[ib] < 800) {
       for (ibn = ibegn; ibn <= iendn; ibn++) {
-        i = geom.boundNode[ibn].node;
-        j = geom.boundNode[ibn].dummy;
+        i = geom.boundaryNode[ibn].node;
+        j = geom.boundaryNode[ibn].dummy;
         var[i] += var[j];
         var[j] = var[i];
       }
@@ -371,4 +371,4 @@ void FVMSolver::PeriodicInt(std::vector<int> &var) {
   }
 }
 
-}  // namespace solver
+} // namespace solver
