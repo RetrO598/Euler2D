@@ -1,3 +1,4 @@
+#include "solver/numeric.h"
 #include <pre/parameter.h>
 #include <solver/FVMSolver.h>
 #include <solver/limiter.h>
@@ -43,7 +44,7 @@ FVMSolver::FVMSolver(preprocess::parameter &parameter,
 
   limiter = new NishikawaR3(param, geom, cv, dv, umin, umax, lim, gradx, grady);
 
-  numeric = new NumericRoe(param, geom, cv, dv, diss, rhs, lim, gradx, grady);
+  numeric = new NumericSLAU2(param, geom, cv, dv, diss, rhs, lim, gradx, grady);
 
   rhsIter.reserve(nNodes);
   rhsOld.reserve(nNodes);

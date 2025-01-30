@@ -7,7 +7,7 @@
 #include <vector>
 namespace solver {
 class BaseNumeric {
- public:
+public:
   BaseNumeric(const preprocess::parameter &param,
               const preprocess::Geometry &geom, std::vector<CONS_VAR> &cv,
               std::vector<DEPEND_VAR> &dv, std::vector<CONS_VAR> &diss,
@@ -18,11 +18,11 @@ class BaseNumeric {
 
   void FluxWalls();
 
-  virtual void DissipNumeric(const double &beta) {};
+  virtual void DissipNumeric(const double &beta){};
 
-  virtual void FluxNumeric() {};
+  virtual void FluxNumeric(){};
 
- protected:
+protected:
   const preprocess::parameter &param;
   const preprocess::Geometry &geom;
   std::vector<CONS_VAR> &cv;
@@ -37,7 +37,7 @@ class BaseNumeric {
 };
 
 class NumericRoe : public BaseNumeric {
- public:
+public:
   NumericRoe(const preprocess::parameter &param,
              const preprocess::Geometry &geom, std::vector<CONS_VAR> &cv,
              std::vector<DEPEND_VAR> &dv, std::vector<CONS_VAR> &diss,
@@ -50,4 +50,31 @@ class NumericRoe : public BaseNumeric {
 
   double EntropyCorr(const double &z, const double &d);
 };
-}  // namespace solver
+
+class NumericSLAU2 : public BaseNumeric {
+public:
+  NumericSLAU2(const preprocess::parameter &param,
+               const preprocess::Geometry &geom, std::vector<CONS_VAR> &cv,
+               std::vector<DEPEND_VAR> &dv, std::vector<CONS_VAR> &diss,
+               std::vector<CONS_VAR> &rhs, std::vector<PRIM_VAR> &lim,
+               std::vector<PRIM_VAR> &gradx, std::vector<PRIM_VAR> &grady);
+
+  void DissipNumeric(const double &beta) override;
+  void FluxNumeric() override;
+
+  inline double pressureFuncLeft(const double &m) {
+    if (std::abs(m) >= 1.0) {
+      return 0.5 * (1 + (m >= 0 ? 1 : -1));
+    } else {
+      return 0.25 * (m + 1) * (m + 1) * (2 - m);
+    }
+  }
+  inline double pressureFuncRight(const double &m) {
+    if (std::abs(m) >= 1.0) {
+      return 0.5 * (1 - (m >= 0 ? 1 : -1));
+    } else {
+      return 0.25 * (m - 1) * (m - 1) * (2 + m);
+    }
+  }
+};
+} // namespace solver
