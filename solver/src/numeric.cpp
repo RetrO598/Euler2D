@@ -315,9 +315,6 @@ void NumericSLAU2::FluxNumeric() {
 
     double fp_left = pressureFuncLeft(m_left);
     double fp_right = pressureFuncRight(m_right);
-    // double p_interface =
-    //     0.5 * (pl + pr) + 0.5 * (fp_left - fp_right) * (pl - pr) +
-    //     (1.0 - X) * (fp_left + fp_right - 1.0) * 0.5 * (pr + pl);
     double p_interface =
         0.5 * (pl + pr) + 0.5 * (fp_left - fp_right) * (pl - pr) +
         std::sqrt(0.5 * (ul * ul + vl * vl + ur * ur + vr * vr)) *
