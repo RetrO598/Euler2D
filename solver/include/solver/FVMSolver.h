@@ -10,7 +10,7 @@
 namespace solver {
 
 class FVMSolver {
- public:
+public:
   FVMSolver(preprocess::parameter &parameter,
             const preprocess::Geometry &geometry);
 
@@ -63,6 +63,7 @@ class FVMSolver {
   }
 
   void writeTecplotDat();
+  void writeLineDat();
 
   preprocess::parameter &param;
   const preprocess::Geometry &geom;
@@ -71,7 +72,7 @@ class FVMSolver {
 
   int iter;
 
- private:
+private:
   std::vector<CONS_VAR> cv;
   std::vector<CONS_VAR> cvOld;
   std::vector<CONS_VAR> diss;
@@ -104,4 +105,4 @@ class FVMSolver {
   double drho;
   double drho1;
 };
-}  // namespace solver
+} // namespace solver

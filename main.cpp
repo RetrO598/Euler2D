@@ -38,6 +38,7 @@ int main(int argc, char *argv[]) {
   } while (!solver.Converged());
 
   solver.writeTecplotDat();
+  solver.writeLineDat();
 
   return 0;
 }
