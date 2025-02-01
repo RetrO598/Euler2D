@@ -1,4 +1,6 @@
+#include "pre/parameter.h"
 #include <algorithm>
+#include <iostream>
 #include <solver/numeric.h>
 
 #include <cmath>
@@ -470,6 +472,157 @@ void NumericAUSM::FluxNumeric() {
             p_interface * ny * ds;
     fc[3] = 0.5 * m_interface * (rl * cl * hl + rr * cr * hr) * ds -
             0.5 * m_interface_abs * (rr * cr * hr - rl * cl * hl) * ds;
+
+    rhs[i].dens += fc[0];
+    rhs[i].xmom += fc[1];
+    rhs[i].ymom += fc[2];
+    rhs[i].ener += fc[3];
+
+    rhs[j].dens -= fc[0];
+    rhs[j].xmom -= fc[1];
+    rhs[j].ymom -= fc[2];
+    rhs[j].ener -= fc[3];
+  }
+  FluxWalls();
+}
+
+NumericAUSMUP2::NumericAUSMUP2(
+    const preprocess::parameter &param, const preprocess::Geometry &geom,
+    std::vector<CONS_VAR> &cv, std::vector<DEPEND_VAR> &dv,
+    std::vector<CONS_VAR> &diss, std::vector<CONS_VAR> &rhs,
+    std::vector<PRIM_VAR> &lim, std::vector<PRIM_VAR> &gradx,
+    std::vector<PRIM_VAR> &grady)
+    : BaseNumeric(param, geom, cv, dv, diss, rhs, lim, gradx, grady) {}
+
+void NumericAUSMUP2::DissipNumeric(const double &beta) {
+  for (int ie = 0; ie < geom.totEdges; ++ie) {
+    int i = geom.edge[ie].nodei;
+    int j = geom.edge[ie].nodej;
+    diss[i].dens += 0.0;
+    diss[i].xmom += 0.0;
+    diss[i].ymom += 0.0;
+    diss[i].ener += 0.0;
+
+    diss[j].dens -= 0.0;
+    diss[j].xmom -= 0.0;
+    diss[j].ymom -= 0.0;
+    diss[j].ener -= 0.0;
+  }
+}
+
+void NumericAUSMUP2::FluxNumeric() {
+  double fc[4];
+  for (int i = 0; i < geom.totNodes; ++i) {
+    rhs[i].dens = -diss[i].dens;
+    rhs[i].xmom = -diss[i].xmom;
+    rhs[i].ymom = -diss[i].ymom;
+    rhs[i].ener = -diss[i].ener;
+  }
+  for (int ie = 0; ie < geom.totEdges; ++ie) {
+    int i = geom.edge[ie].nodei;
+    int j = geom.edge[ie].nodej;
+    double ds = std::sqrt(geom.sij[ie].x * geom.sij[ie].x +
+                          geom.sij[ie].y * geom.sij[ie].y);
+    double nx = geom.sij[ie].x / ds;
+    double ny = geom.sij[ie].y / ds;
+    double rx = 0.5 * (geom.coords[j].x - geom.coords[i].x);
+    double ry = 0.5 * (geom.coords[j].y - geom.coords[i].y);
+    double rrho = 1.0 / cv[i].dens;
+    double gam1 = dv[i].gamma - 1.0;
+    double ggm1 = dv[i].gamma / gam1;
+    double rl =
+        cv[i].dens + lim[i].dens * (gradx[i].dens * rx + grady[i].dens * ry);
+    double ul = cv[i].xmom * rrho +
+                lim[i].velx * (gradx[i].velx * rx + grady[i].velx * ry);
+    double vl = cv[i].ymom * rrho +
+                lim[i].vely * (gradx[i].vely * rx + grady[i].vely * ry);
+    double pl = dv[i].press +
+                lim[i].press * (gradx[i].press * rx + grady[i].press * ry);
+    double hl = ggm1 * pl / rl + 0.5 * (ul * ul + vl * vl);
+    double cl2 = 2.0 * (dv[i].gamma - 1.0) / (dv[i].gamma + 1.0) * hl;
+    double cl = std::sqrt(cl2);
+
+    rrho = 1.0 / cv[j].dens;
+    gam1 = dv[j].gamma - 1.0;
+    ggm1 = dv[j].gamma / gam1;
+    double rr =
+        cv[j].dens - lim[j].dens * (gradx[j].dens * rx + grady[j].dens * ry);
+    double ur = cv[j].xmom * rrho -
+                lim[j].velx * (gradx[j].velx * rx + grady[j].velx * ry);
+    double vr = cv[j].ymom * rrho -
+                lim[j].vely * (gradx[j].vely * rx + grady[j].vely * ry);
+    double pr = dv[j].press -
+                lim[j].press * (gradx[j].press * rx + grady[j].press * ry);
+    double hr = ggm1 * pr / rr + 0.5 * (ur * ur + vr * vr);
+    double cr2 = 2.0 * (dv[j].gamma - 1.0) / (dv[j].gamma + 1.0) * hr;
+    double cr = std::sqrt(cr2);
+
+    double veln_left = ul * nx + vl * ny;
+    double veln_right = ur * nx + vr * ny;
+    double c_bar_left = cl2 / (std::max(cl, veln_left));
+    double c_bar_right = cr2 / (std::max(cr, -veln_right));
+
+    double c_interface = std::min(c_bar_left, c_bar_right);
+    double m_left = veln_left / c_interface;
+    double m_right = veln_right / c_interface;
+    double m_bar_2 = (veln_left * veln_left + veln_right * veln_right) /
+                     (2.0 * c_interface * c_interface);
+    double m_infty;
+    if (param.flowtype_ == preprocess::flowType::External) {
+      m_infty = param.MaInfinity;
+    } else {
+      double mach = std::sqrt(param.refMach2);
+      m_infty = 0.2 * std::min(mach, 1.0);
+    }
+    double m0_2 = std::min(1.0, std::max(m_bar_2, m_infty * m_infty));
+    double m0 = std::sqrt(m0_2);
+    double fa = m0 * (2.0 - m0);
+    double mp = -0.25 / fa * std::max(1.0 - m_bar_2, 0.0) * (pr - pl) /
+                (0.5 * (rr + rl) * c_interface * c_interface);
+
+    double fp_left;
+    double fp_right;
+    double fm_left;
+    double fm_right;
+    if (std::abs(m_left) >= 1.0) {
+      fm_left = 0.5 * (m_left + std::abs(m_left));
+      fp_left = 0.5 * (1.0 + (m_left >= 0.0 ? 1.0 : -1.0));
+    } else {
+      fm_left = 0.25 * (m_left + 1.0) * (m_left + 1.0) +
+                0.125 * (m_left * m_left - 1.0) * (m_left * m_left - 1.0);
+      fp_left = 0.25 * (m_left + 1.0) * (m_left + 1.0) * (2.0 - m_left);
+    }
+    if (std::abs(m_right) >= 1.0) {
+      fm_right = 0.5 * (m_right - std::abs(m_right));
+      fp_right = 0.5 * (1.0 - (m_right >= 0.0 ? 1.0 : -1.0));
+    } else {
+      fm_right = -0.25 * (m_right - 1.0) * (m_right - 1.0) -
+                 0.125 * (m_right * m_right - 1.0) * (m_right * m_right - 1.0);
+      fp_right = 0.25 * (m_right - 1.0) * (m_right - 1.0) * (2.0 + m_right);
+    }
+    double m_interface = fm_left + fm_right + mp;
+
+    double p_interface =
+        0.5 * (pl + pr) + 0.5 * (fp_left - fp_right) * (pl - pr) +
+        std::sqrt(0.5 * (ul * ul + vl * vl + ur * ur + vr * vr)) *
+            (fp_left + fp_right - 1) * c_interface * 0.5 * (rr + rl);
+
+    double mass_dot;
+    if (m_interface > 0.0) {
+      mass_dot = m_interface * c_interface * rl;
+    } else {
+      mass_dot = m_interface * c_interface * rr;
+    }
+
+    double mass_flux_left = 0.5 * (mass_dot + std::abs(mass_dot));
+    double mass_flux_right = 0.5 * (mass_dot - std::abs(mass_dot));
+
+    fc[0] = (mass_flux_left + mass_flux_right) * ds;
+    fc[1] =
+        (mass_flux_left * ul + mass_flux_right * ur + p_interface * nx) * ds;
+    fc[2] =
+        (mass_flux_left * vl + mass_flux_right * vr + p_interface * ny) * ds;
+    fc[3] = (mass_flux_left * hl + mass_flux_right * hr) * ds;
 
     rhs[i].dens += fc[0];
     rhs[i].xmom += fc[1];
