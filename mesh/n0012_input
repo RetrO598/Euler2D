@@ -54,7 +54,7 @@ solout
 #
 # Iteration control
 # -----------------
- 2000      # max. number of iterations
+ 5000      # max. number of iterations
  99999     # number of iterations between solution dumps
  1.0E-5    # convergence tolerance
  N         # use previous solution for restart (Y=yes, N=no)

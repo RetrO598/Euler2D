@@ -77,4 +77,15 @@ public:
     }
   }
 };
+
+class NumericAUSM : public BaseNumeric {
+public:
+  NumericAUSM(const preprocess::parameter &param,
+              const preprocess::Geometry &geom, std::vector<CONS_VAR> &cv,
+              std::vector<DEPEND_VAR> &dv, std::vector<CONS_VAR> &diss,
+              std::vector<CONS_VAR> &rhs, std::vector<PRIM_VAR> &lim,
+              std::vector<PRIM_VAR> &gradx, std::vector<PRIM_VAR> &grady);
+  void DissipNumeric(const double &beta) override;
+  void FluxNumeric() override;
+};
 } // namespace solver
