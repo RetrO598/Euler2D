@@ -26,4 +26,9 @@ struct VISC_VAR {
   double mu;
   double lambda;
 };
-}  // namespace solver
+
+struct interfaceVar {
+  PRIM_VAR left;
+  PRIM_VAR right;
+};
+} // namespace solver

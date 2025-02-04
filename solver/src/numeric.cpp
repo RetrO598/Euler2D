@@ -1,4 +1,5 @@
 #include "pre/parameter.h"
+#include "solver/variableDef.h"
 #include <algorithm>
 #include <iostream>
 #include <solver/numeric.h>
@@ -57,13 +58,36 @@ void BaseNumeric::FluxWalls() {
   }
 }
 
-NumericRoe::NumericRoe(const preprocess::parameter &param,
-                       const preprocess::Geometry &geom,
-                       std::vector<CONS_VAR> &cv, std::vector<DEPEND_VAR> &dv,
-                       std::vector<CONS_VAR> &diss, std::vector<CONS_VAR> &rhs,
-                       std::vector<PRIM_VAR> &lim, std::vector<PRIM_VAR> &gradx,
-                       std::vector<PRIM_VAR> &grady)
-    : BaseNumeric(param, geom, cv, dv, diss, rhs, lim, gradx, grady) {}
+interfaceVar BaseNumeric::Interpolate(const int &i, const int &j) {
+  double rx = 0.5 * (geom.coords[j].x - geom.coords[i].x);
+  double ry = 0.5 * (geom.coords[j].y - geom.coords[i].y);
+  double rrho = 1.0 / cv[i].dens;
+  double gam1 = dv[i].gamma - 1.0;
+  double ggm1 = dv[i].gamma / gam1;
+  double r =
+      cv[i].dens + lim[i].dens * (gradx[i].dens * rx + grady[i].dens * ry);
+  double u = cv[i].xmom * rrho +
+             lim[i].velx * (gradx[i].velx * rx + grady[i].velx * ry);
+  double v = cv[i].ymom * rrho +
+             lim[i].vely * (gradx[i].vely * rx + grady[i].vely * ry);
+  double p =
+      dv[i].press + lim[i].press * (gradx[i].press * rx + grady[i].press * ry);
+
+  PRIM_VAR left{r, u, v, p};
+
+  rrho = 1.0 / cv[j].dens;
+  gam1 = dv[j].gamma - 1.0;
+  ggm1 = dv[j].gamma / gam1;
+  r = cv[j].dens - lim[j].dens * (gradx[j].dens * rx + grady[j].dens * ry);
+  u = cv[j].xmom * rrho -
+      lim[j].velx * (gradx[j].velx * rx + grady[j].velx * ry);
+  v = cv[j].ymom * rrho -
+      lim[j].vely * (gradx[j].vely * rx + grady[j].vely * ry);
+  p = dv[j].press - lim[j].press * (gradx[j].press * rx + grady[j].press * ry);
+  PRIM_VAR right{r, u, v, p};
+
+  return interfaceVar{left, right};
+}
 
 double NumericRoe::EntropyCorr(const double &z, const double &d) {
   if (z > d) {
@@ -91,29 +115,21 @@ void NumericRoe::DissipNumeric(const double &beta) {
     double rx = 0.5 * (geom.coords[j].x - geom.coords[i].x);
     double ry = 0.5 * (geom.coords[j].y - geom.coords[i].y);
 
-    rrho = 1.0 / cv[i].dens;
-    gam1 = dv[i].gamma - 1.0;
-    ggm1 = dv[i].gamma / gam1;
-    rl = cv[i].dens + lim[i].dens * (gradx[i].dens * rx + grady[i].dens * ry);
-    ul = cv[i].xmom * rrho +
-         lim[i].velx * (gradx[i].velx * rx + grady[i].velx * ry);
-    vl = cv[i].ymom * rrho +
-         lim[i].vely * (gradx[i].vely * rx + grady[i].vely * ry);
-    pl = dv[i].press +
-         lim[i].press * (gradx[i].press * rx + grady[i].press * ry);
-    hl = ggm1 * pl / rl + 0.5 * (ul * ul + vl * vl);
+    interfaceVar vars = Interpolate(i, j);
 
-    rrho = 1.0 / cv[j].dens;
-    gam1 = dv[j].gamma - 1.0;
-    ggm1 = dv[j].gamma / gam1;
-    rr = cv[j].dens - lim[j].dens * (gradx[j].dens * rx + grady[j].dens * ry);
-    ur = cv[j].xmom * rrho -
-         lim[j].velx * (gradx[j].velx * rx + grady[j].velx * ry);
-    vr = cv[j].ymom * rrho -
-         lim[j].vely * (gradx[j].vely * rx + grady[j].vely * ry);
-    pr = dv[j].press -
-         lim[j].press * (gradx[j].press * rx + grady[j].press * ry);
-    hr = ggm1 * pr / rr + 0.5 * (ur * ur + vr * vr);
+    rl = vars.left.dens;
+    ul = vars.left.velx;
+    vl = vars.left.vely;
+    pl = vars.left.press;
+    hl =
+        dv[i].gamma / (dv[i].gamma - 1.0) * pl / rl + 0.5 * (ul * ul + vl * vl);
+
+    rr = vars.right.dens;
+    ur = vars.right.velx;
+    vr = vars.right.vely;
+    pr = vars.right.press;
+    hr =
+        dv[j].gamma / (dv[j].gamma - 1.0) * pr / rr + 0.5 * (ur * ur + vr * vr);
 
     rav = std::sqrt(rl * rr);
     gam1 = 0.5 * (dv[i].gamma + dv[j].gamma) - 1.0;
@@ -183,30 +199,23 @@ void NumericRoe::FluxNumeric() {
     rx = 0.5 * (geom.coords[j].x - geom.coords[i].x);
     ry = 0.5 * (geom.coords[j].y - geom.coords[i].y);
 
-    rrho = 1.0 / cv[i].dens;
-    gam1 = dv[i].gamma - 1.0;
-    ggm1 = dv[i].gamma / gam1;
-    rl = cv[i].dens + lim[i].dens * (gradx[i].dens * rx + grady[i].dens * ry);
-    ul = cv[i].xmom * rrho +
-         lim[i].velx * (gradx[i].velx * rx + grady[i].velx * ry);
-    vl = cv[i].ymom * rrho +
-         lim[i].vely * (gradx[i].vely * rx + grady[i].vely * ry);
-    pl = dv[i].press +
-         lim[i].press * (gradx[i].press * rx + grady[i].press * ry);
-    hl = ggm1 * pl / rl + 0.5 * (ul * ul + vl * vl);
-    qsrl = (ul * geom.sij[ie].x + vl * geom.sij[ie].y) * rl;
+    interfaceVar vars = Interpolate(i, j);
 
-    rrho = 1.0 / cv[j].dens;
-    gam1 = dv[j].gamma - 1.0;
-    ggm1 = dv[j].gamma / gam1;
-    rr = cv[j].dens - lim[j].dens * (gradx[j].dens * rx + grady[j].dens * ry);
-    ur = cv[j].xmom * rrho -
-         lim[j].velx * (gradx[j].velx * rx + grady[j].velx * ry);
-    vr = cv[j].ymom * rrho -
-         lim[j].vely * (gradx[j].vely * rx + grady[j].vely * ry);
-    pr = dv[j].press -
-         lim[j].press * (gradx[j].press * rx + grady[j].press * ry);
-    hr = ggm1 * pr / rr + 0.5 * (ur * ur + vr * vr);
+    rl = vars.left.dens;
+    ul = vars.left.velx;
+    vl = vars.left.vely;
+    pl = vars.left.press;
+    hl =
+        dv[i].gamma / (dv[i].gamma - 1.0) * pl / rl + 0.5 * (ul * ul + vl * vl);
+
+    rr = vars.right.dens;
+    ur = vars.right.velx;
+    vr = vars.right.vely;
+    pr = vars.right.press;
+    hr =
+        dv[j].gamma / (dv[j].gamma - 1.0) * pr / rr + 0.5 * (ur * ur + vr * vr);
+
+    qsrl = (ul * geom.sij[ie].x + vl * geom.sij[ie].y) * rl;
     qsrr = (ur * geom.sij[ie].x + vr * geom.sij[ie].y) * rr;
 
     pav = 0.5 * (pl + pr);
@@ -228,14 +237,6 @@ void NumericRoe::FluxNumeric() {
 
   FluxWalls();
 }
-
-NumericSLAU2::NumericSLAU2(
-    const preprocess::parameter &param, const preprocess::Geometry &geom,
-    std::vector<CONS_VAR> &cv, std::vector<DEPEND_VAR> &dv,
-    std::vector<CONS_VAR> &diss, std::vector<CONS_VAR> &rhs,
-    std::vector<PRIM_VAR> &lim, std::vector<PRIM_VAR> &gradx,
-    std::vector<PRIM_VAR> &grady)
-    : BaseNumeric(param, geom, cv, dv, diss, rhs, lim, gradx, grady) {}
 
 void NumericSLAU2::DissipNumeric(const double &beta) {
   for (int ie = 0; ie < geom.totEdges; ++ie) {
@@ -270,33 +271,25 @@ void NumericSLAU2::FluxNumeric() {
     double ny = geom.sij[ie].y / ds;
     double rx = 0.5 * (geom.coords[j].x - geom.coords[i].x);
     double ry = 0.5 * (geom.coords[j].y - geom.coords[i].y);
-    double rrho = 1.0 / cv[i].dens;
-    double gam1 = dv[i].gamma - 1.0;
-    double ggm1 = dv[i].gamma / gam1;
-    double rl =
-        cv[i].dens + lim[i].dens * (gradx[i].dens * rx + grady[i].dens * ry);
-    double ul = cv[i].xmom * rrho +
-                lim[i].velx * (gradx[i].velx * rx + grady[i].velx * ry);
-    double vl = cv[i].ymom * rrho +
-                lim[i].vely * (gradx[i].vely * rx + grady[i].vely * ry);
-    double pl = dv[i].press +
-                lim[i].press * (gradx[i].press * rx + grady[i].press * ry);
-    double hl = ggm1 * pl / rl + 0.5 * (ul * ul + vl * vl);
-    double cl = gam1 * (hl - 0.5 * (ul * ul + vl * vl));
 
-    rrho = 1.0 / cv[j].dens;
-    gam1 = dv[j].gamma - 1.0;
-    ggm1 = dv[j].gamma / gam1;
-    double rr =
-        cv[j].dens - lim[j].dens * (gradx[j].dens * rx + grady[j].dens * ry);
-    double ur = cv[j].xmom * rrho -
-                lim[j].velx * (gradx[j].velx * rx + grady[j].velx * ry);
-    double vr = cv[j].ymom * rrho -
-                lim[j].vely * (gradx[j].vely * rx + grady[j].vely * ry);
-    double pr = dv[j].press -
-                lim[j].press * (gradx[j].press * rx + grady[j].press * ry);
-    double hr = ggm1 * pr / rr + 0.5 * (ur * ur + vr * vr);
-    double cr = gam1 * (hr - 0.5 * (ur * ur + vr * vr));
+    interfaceVar vars = Interpolate(i, j);
+
+    double rl = vars.left.dens;
+    double ul = vars.left.velx;
+    double vl = vars.left.vely;
+    double pl = vars.left.press;
+    double hl =
+        dv[i].gamma / (dv[i].gamma - 1.0) * pl / rl + 0.5 * (ul * ul + vl * vl);
+
+    double rr = vars.right.dens;
+    double ur = vars.right.velx;
+    double vr = vars.right.vely;
+    double pr = vars.right.press;
+    double hr =
+        dv[j].gamma / (dv[j].gamma - 1.0) * pr / rr + 0.5 * (ur * ur + vr * vr);
+
+    double cl = (dv[i].gamma - 1.0) * (hl - 0.5 * (ul * ul + vl * vl));
+    double cr = (dv[j].gamma - 1.0) * (hr - 0.5 * (ur * ur + vr * vr));
 
     double veln_left = ul * nx + vl * ny;
     double veln_right = ur * nx + vr * ny;
@@ -347,15 +340,6 @@ void NumericSLAU2::FluxNumeric() {
   FluxWalls();
 }
 
-NumericAUSM::NumericAUSM(const preprocess::parameter &param,
-                         const preprocess::Geometry &geom,
-                         std::vector<CONS_VAR> &cv, std::vector<DEPEND_VAR> &dv,
-                         std::vector<CONS_VAR> &diss,
-                         std::vector<CONS_VAR> &rhs, std::vector<PRIM_VAR> &lim,
-                         std::vector<PRIM_VAR> &gradx,
-                         std::vector<PRIM_VAR> &grady)
-    : BaseNumeric(param, geom, cv, dv, diss, rhs, lim, gradx, grady) {}
-
 void NumericAUSM::DissipNumeric(const double &beta) {
   for (int ie = 0; ie < geom.totEdges; ++ie) {
     int i = geom.edge[ie].nodei;
@@ -389,34 +373,25 @@ void NumericAUSM::FluxNumeric() {
     double ny = geom.sij[ie].y / ds;
     double rx = 0.5 * (geom.coords[j].x - geom.coords[i].x);
     double ry = 0.5 * (geom.coords[j].y - geom.coords[i].y);
-    double rrho = 1.0 / cv[i].dens;
-    double gam1 = dv[i].gamma - 1.0;
-    double ggm1 = dv[i].gamma / gam1;
-    double rl =
-        cv[i].dens + lim[i].dens * (gradx[i].dens * rx + grady[i].dens * ry);
-    double ul = cv[i].xmom * rrho +
-                lim[i].velx * (gradx[i].velx * rx + grady[i].velx * ry);
-    double vl = cv[i].ymom * rrho +
-                lim[i].vely * (gradx[i].vely * rx + grady[i].vely * ry);
-    double pl = dv[i].press +
-                lim[i].press * (gradx[i].press * rx + grady[i].press * ry);
-    double hl = ggm1 * pl / rl + 0.5 * (ul * ul + vl * vl);
-    double cl2 = gam1 * (hl - 0.5 * (ul * ul + vl * vl));
-    double cl = std::sqrt(cl2);
 
-    rrho = 1.0 / cv[j].dens;
-    gam1 = dv[j].gamma - 1.0;
-    ggm1 = dv[j].gamma / gam1;
-    double rr =
-        cv[j].dens - lim[j].dens * (gradx[j].dens * rx + grady[j].dens * ry);
-    double ur = cv[j].xmom * rrho -
-                lim[j].velx * (gradx[j].velx * rx + grady[j].velx * ry);
-    double vr = cv[j].ymom * rrho -
-                lim[j].vely * (gradx[j].vely * rx + grady[j].vely * ry);
-    double pr = dv[j].press -
-                lim[j].press * (gradx[j].press * rx + grady[j].press * ry);
-    double hr = ggm1 * pr / rr + 0.5 * (ur * ur + vr * vr);
-    double cr2 = gam1 * (hr - 0.5 * (ur * ur + vr * vr));
+    interfaceVar vars = Interpolate(i, j);
+
+    double rl = vars.left.dens;
+    double ul = vars.left.velx;
+    double vl = vars.left.vely;
+    double pl = vars.left.press;
+    double hl =
+        dv[i].gamma / (dv[i].gamma - 1.0) * pl / rl + 0.5 * (ul * ul + vl * vl);
+
+    double rr = vars.right.dens;
+    double ur = vars.right.velx;
+    double vr = vars.right.vely;
+    double pr = vars.right.press;
+    double hr =
+        dv[j].gamma / (dv[j].gamma - 1.0) * pr / rr + 0.5 * (ur * ur + vr * vr);
+    double cl2 = (dv[i].gamma - 1.0) * (hl - 0.5 * (ul * ul + vl * vl));
+    double cl = std::sqrt(cl2);
+    double cr2 = (dv[j].gamma - 1.0) * (hr - 0.5 * (ur * ur + vr * vr));
     double cr = std::sqrt(cr2);
 
     double veln_left = ul * nx + vl * ny;
@@ -486,14 +461,6 @@ void NumericAUSM::FluxNumeric() {
   FluxWalls();
 }
 
-NumericAUSMUP2::NumericAUSMUP2(
-    const preprocess::parameter &param, const preprocess::Geometry &geom,
-    std::vector<CONS_VAR> &cv, std::vector<DEPEND_VAR> &dv,
-    std::vector<CONS_VAR> &diss, std::vector<CONS_VAR> &rhs,
-    std::vector<PRIM_VAR> &lim, std::vector<PRIM_VAR> &gradx,
-    std::vector<PRIM_VAR> &grady)
-    : BaseNumeric(param, geom, cv, dv, diss, rhs, lim, gradx, grady) {}
-
 void NumericAUSMUP2::DissipNumeric(const double &beta) {
   for (int ie = 0; ie < geom.totEdges; ++ie) {
     int i = geom.edge[ie].nodei;
@@ -527,33 +494,24 @@ void NumericAUSMUP2::FluxNumeric() {
     double ny = geom.sij[ie].y / ds;
     double rx = 0.5 * (geom.coords[j].x - geom.coords[i].x);
     double ry = 0.5 * (geom.coords[j].y - geom.coords[i].y);
-    double rrho = 1.0 / cv[i].dens;
-    double gam1 = dv[i].gamma - 1.0;
-    double ggm1 = dv[i].gamma / gam1;
-    double rl =
-        cv[i].dens + lim[i].dens * (gradx[i].dens * rx + grady[i].dens * ry);
-    double ul = cv[i].xmom * rrho +
-                lim[i].velx * (gradx[i].velx * rx + grady[i].velx * ry);
-    double vl = cv[i].ymom * rrho +
-                lim[i].vely * (gradx[i].vely * rx + grady[i].vely * ry);
-    double pl = dv[i].press +
-                lim[i].press * (gradx[i].press * rx + grady[i].press * ry);
-    double hl = ggm1 * pl / rl + 0.5 * (ul * ul + vl * vl);
+
+    interfaceVar vars = Interpolate(i, j);
+
+    double rl = vars.left.dens;
+    double ul = vars.left.velx;
+    double vl = vars.left.vely;
+    double pl = vars.left.press;
+    double hl =
+        dv[i].gamma / (dv[i].gamma - 1.0) * pl / rl + 0.5 * (ul * ul + vl * vl);
+
+    double rr = vars.right.dens;
+    double ur = vars.right.velx;
+    double vr = vars.right.vely;
+    double pr = vars.right.press;
+    double hr =
+        dv[j].gamma / (dv[j].gamma - 1.0) * pr / rr + 0.5 * (ur * ur + vr * vr);
     double cl2 = 2.0 * (dv[i].gamma - 1.0) / (dv[i].gamma + 1.0) * hl;
     double cl = std::sqrt(cl2);
-
-    rrho = 1.0 / cv[j].dens;
-    gam1 = dv[j].gamma - 1.0;
-    ggm1 = dv[j].gamma / gam1;
-    double rr =
-        cv[j].dens - lim[j].dens * (gradx[j].dens * rx + grady[j].dens * ry);
-    double ur = cv[j].xmom * rrho -
-                lim[j].velx * (gradx[j].velx * rx + grady[j].velx * ry);
-    double vr = cv[j].ymom * rrho -
-                lim[j].vely * (gradx[j].vely * rx + grady[j].vely * ry);
-    double pr = dv[j].press -
-                lim[j].press * (gradx[j].press * rx + grady[j].press * ry);
-    double hr = ggm1 * pr / rr + 0.5 * (ur * ur + vr * vr);
     double cr2 = 2.0 * (dv[j].gamma - 1.0) / (dv[j].gamma + 1.0) * hr;
     double cr = std::sqrt(cr2);
 

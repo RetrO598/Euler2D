@@ -18,6 +18,8 @@ public:
 
   void FluxWalls();
 
+  interfaceVar Interpolate(const int &i, const int &j);
+
   virtual void DissipNumeric(const double &beta){};
 
   virtual void FluxNumeric(){};
@@ -38,11 +40,7 @@ protected:
 
 class NumericRoe : public BaseNumeric {
 public:
-  NumericRoe(const preprocess::parameter &param,
-             const preprocess::Geometry &geom, std::vector<CONS_VAR> &cv,
-             std::vector<DEPEND_VAR> &dv, std::vector<CONS_VAR> &diss,
-             std::vector<CONS_VAR> &rhs, std::vector<PRIM_VAR> &lim,
-             std::vector<PRIM_VAR> &gradx, std::vector<PRIM_VAR> &grady);
+  using BaseNumeric::BaseNumeric;
 
   void DissipNumeric(const double &beta) override;
 
@@ -53,12 +51,7 @@ public:
 
 class NumericSLAU2 : public BaseNumeric {
 public:
-  NumericSLAU2(const preprocess::parameter &param,
-               const preprocess::Geometry &geom, std::vector<CONS_VAR> &cv,
-               std::vector<DEPEND_VAR> &dv, std::vector<CONS_VAR> &diss,
-               std::vector<CONS_VAR> &rhs, std::vector<PRIM_VAR> &lim,
-               std::vector<PRIM_VAR> &gradx, std::vector<PRIM_VAR> &grady);
-
+  using BaseNumeric::BaseNumeric;
   void DissipNumeric(const double &beta) override;
   void FluxNumeric() override;
 
@@ -80,22 +73,14 @@ public:
 
 class NumericAUSM : public BaseNumeric {
 public:
-  NumericAUSM(const preprocess::parameter &param,
-              const preprocess::Geometry &geom, std::vector<CONS_VAR> &cv,
-              std::vector<DEPEND_VAR> &dv, std::vector<CONS_VAR> &diss,
-              std::vector<CONS_VAR> &rhs, std::vector<PRIM_VAR> &lim,
-              std::vector<PRIM_VAR> &gradx, std::vector<PRIM_VAR> &grady);
+  using BaseNumeric::BaseNumeric;
   void DissipNumeric(const double &beta) override;
   void FluxNumeric() override;
 };
 
 class NumericAUSMUP2 : public BaseNumeric {
 public:
-  NumericAUSMUP2(const preprocess::parameter &param,
-                 const preprocess::Geometry &geom, std::vector<CONS_VAR> &cv,
-                 std::vector<DEPEND_VAR> &dv, std::vector<CONS_VAR> &diss,
-                 std::vector<CONS_VAR> &rhs, std::vector<PRIM_VAR> &lim,
-                 std::vector<PRIM_VAR> &gradx, std::vector<PRIM_VAR> &grady);
+  using BaseNumeric::BaseNumeric;
   void DissipNumeric(const double &beta) override;
   void FluxNumeric() override;
 };
