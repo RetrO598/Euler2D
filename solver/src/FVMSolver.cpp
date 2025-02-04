@@ -1,7 +1,8 @@
-#include "solver/numeric.h"
+#include <memory>
 #include <pre/parameter.h>
 #include <solver/FVMSolver.h>
 #include <solver/limiter.h>
+#include <solver/numeric.h>
 #include <solver/variableDef.h>
 
 #include <algorithm>
@@ -42,10 +43,11 @@ FVMSolver::FVMSolver(preprocess::parameter &parameter,
 
   cl = 0.0;
 
-  limiter = new NishikawaR3(param, geom, cv, dv, umin, umax, lim, gradx, grady);
+  limiter = std::make_unique<NishikawaR3>(param, geom, cv, dv, umin, umax, lim,
+                                          gradx, grady);
 
-  numeric =
-      new NumericAUSMUP2(param, geom, cv, dv, diss, rhs, lim, gradx, grady);
+  numeric = std::make_unique<NumericSLAU2>(param, geom, cv, dv, diss, rhs, lim,
+                                           gradx, grady);
 
   rhsIter.reserve(nNodes);
   rhsOld.reserve(nNodes);

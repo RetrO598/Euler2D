@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <pre/geometry.h>
 #include <pre/parameter.h>
 #include <solver/limiter.h>
@@ -59,8 +60,8 @@ public:
 
   preprocess::parameter &param;
   const preprocess::Geometry &geom;
-  BaseLimiter *limiter;
-  BaseNumeric *numeric;
+  std::unique_ptr<BaseLimiter> limiter;
+  std::unique_ptr<BaseNumeric> numeric;
 
   int iter;
 
