@@ -23,14 +23,6 @@ BaseLimiter::BaseLimiter(const preprocess::parameter &param,
   limRef.vely = 0.0;
 }
 
-VenkatakrishnanLimiter::VenkatakrishnanLimiter(
-    const preprocess::parameter &param, const preprocess::Geometry &geom,
-    std::vector<CONS_VAR> &cv, std::vector<DEPEND_VAR> &dv,
-    std::vector<PRIM_VAR> &umin, std::vector<PRIM_VAR> &umax,
-    std::vector<PRIM_VAR> &lim, std::vector<PRIM_VAR> &gradx,
-    std::vector<PRIM_VAR> &grady)
-    : BaseLimiter(param, geom, cv, dv, umin, umax, lim, gradx, grady) {}
-
 void BaseLimiter::limiterRefVals() {
   volRef = -1.0e+32;
   for (int i = 0; i < geom.phyNodes; ++i) {
@@ -251,16 +243,6 @@ void VenkatakrishnanLimiter::limiterUpdate() {
     ibegn = iendn + 1;
   }
 }
-
-NishikawaR3::NishikawaR3(const preprocess::parameter &param,
-                         const preprocess::Geometry &geom,
-                         std::vector<CONS_VAR> &cv, std::vector<DEPEND_VAR> &dv,
-                         std::vector<PRIM_VAR> &umin,
-                         std::vector<PRIM_VAR> &umax,
-                         std::vector<PRIM_VAR> &lim,
-                         std::vector<PRIM_VAR> &gradx,
-                         std::vector<PRIM_VAR> &grady)
-    : BaseLimiter(param, geom, cv, dv, umin, umax, lim, gradx, grady) {}
 
 void NishikawaR3::limiterUpdate() {
   double eps;

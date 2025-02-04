@@ -37,14 +37,7 @@ protected:
 
 class VenkatakrishnanLimiter : public BaseLimiter {
 public:
-  VenkatakrishnanLimiter(const preprocess::parameter &param,
-                         const preprocess::Geometry &geom,
-                         std::vector<CONS_VAR> &cv, std::vector<DEPEND_VAR> &dv,
-                         std::vector<PRIM_VAR> &umin,
-                         std::vector<PRIM_VAR> &umax,
-                         std::vector<PRIM_VAR> &lim,
-                         std::vector<PRIM_VAR> &gradx,
-                         std::vector<PRIM_VAR> &grady);
+  using BaseLimiter::BaseLimiter;
   void limiterUpdate() override;
 
   inline double Venkat(double d2, double d1min, double d1max, double eps2) {
@@ -63,11 +56,7 @@ public:
 
 class NishikawaR3 : public BaseLimiter {
 public:
-  NishikawaR3(const preprocess::parameter &param,
-              const preprocess::Geometry &geom, std::vector<CONS_VAR> &cv,
-              std::vector<DEPEND_VAR> &dv, std::vector<PRIM_VAR> &umin,
-              std::vector<PRIM_VAR> &umax, std::vector<PRIM_VAR> &lim,
-              std::vector<PRIM_VAR> &gradx, std::vector<PRIM_VAR> &grady);
+  using BaseLimiter::BaseLimiter;
   void limiterUpdate() override;
 
   inline double Nishikawa_R3(const double &delta_pos, const double &delta_neg,

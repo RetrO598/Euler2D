@@ -32,15 +32,7 @@ public:
   void PeriodicInt(std::vector<int> &var);
   void PeriodicVisc();
 
-  // void DissipInit(int irk, double beta);
-  // void DissipRoe2(double beta);
-
-  // void FluxRoe2();
-  // void FluxWalls();
-
   void solve();
-
-  // double EntropyCorr(double z, double d);
 
   void Timestep();
 
