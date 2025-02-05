@@ -1,3 +1,4 @@
+#include <memory>
 #include <pre/geometry.h>
 
 #include <algorithm>
@@ -9,6 +10,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 namespace preprocess {
 Geometry::Geometry(const std::string &filename, const std::string &commentChar)
@@ -21,48 +23,15 @@ Geometry::Geometry(const std::string &filename, const std::string &commentChar)
   numBoundSegs = 0;
   numBoundFaces = 0;
   numBoundNodes = 0;
-
-  BoundTypes = nullptr;
-  bname = nullptr;
-  tria = nullptr;
-  edge = nullptr;
-  boundaryFace = nullptr;
-  boundaryNode = nullptr;
-  ibound = nullptr;
-  coords = nullptr;
-  sij = nullptr;
-  vol = nullptr;
-  sbf = nullptr;
-  sproj = nullptr;
-
-  tmpElist = nullptr;
-}
-
-Geometry::~Geometry() {
-  delete[] BoundTypes;
-  delete[] bname;
-  delete[] tria;
-  delete[] edge;
-  delete[] boundaryFace;
-  delete[] boundaryNode;
-  delete[] ibound;
-  delete[] coords;
-  delete[] sij;
-  delete[] vol;
-  delete[] sbf;
-  delete[] sproj;
-  delete[] tmpElist;
-
-  DeleteTmpElist();
 }
 
 void Geometry::ReadGrid() {
   std::string str = gridReader.readLineFiltered();
   std::stringstream(str) >> phyNodes >> numTria >> numBoundSegs;
 
-  BoundTypes = new int[numBoundSegs];
-  bname = new std::string[numBoundSegs];
-  ibound = new idBoundary[numBoundSegs];
+  BoundTypes.resize(numBoundSegs);
+  bname.resize(numBoundSegs);
+  ibound.resize(numBoundSegs);
 
   for (int ib = 0; ib < numBoundSegs; ++ib) {
     str = gridReader.readLineFiltered();
@@ -76,8 +45,8 @@ void Geometry::ReadGrid() {
   numBoundFaces = ibound[numBoundSegs - 1].bfaceIndex + 1;
   numBoundNodes = ibound[numBoundSegs - 1].bnodeIndex + 1;
 
-  boundaryNode = new BoundaryNode[numBoundNodes];
-  boundaryFace = new BoundaryFace[numBoundFaces];
+  boundaryNode.resize(numBoundNodes);
+  boundaryFace.resize(numBoundFaces);
 
   for (int i = 0; i < numBoundNodes; ++i) {
     boundaryNode[i].node = -777;
@@ -126,14 +95,14 @@ void Geometry::ReadGrid() {
 
   DummyNodes();
 
-  coords = new Node[totNodes];
+  coords.resize(totNodes);
 
   for (int i = 0; i < phyNodes; ++i) {
     str = gridReader.readLineFiltered();
     std::stringstream(str) >> coords[i].x >> coords[i].y;
   }
 
-  tria = new Tria[numTria];
+  tria.resize(numTria);
 
   for (int i = 0; i < numTria; ++i) {
     str = gridReader.readLineFiltered();
@@ -150,8 +119,9 @@ void Geometry::ReadGrid() {
 }
 
 void Geometry::DummyNodes() {
-  bool flag, *marker;
-  marker = new bool[phyNodes];
+  bool flag;
+  std::vector<bool> marker;
+  marker.resize(phyNodes);
 
   int ibegf = 0;
   int ibegn = 0;
@@ -167,7 +137,7 @@ void Geometry::DummyNodes() {
            (itype >= 600 && itype < 700);
 
     if (itype < 700 || itype >= 800) {
-      std::fill(marker, marker + phyNodes, false);
+      std::fill(marker.begin(), marker.end(), false);
 
       for (int i = ibegf; i <= iendf; ++i) {
         marker[boundaryFace[i].nodei] = true;
@@ -200,17 +170,16 @@ void Geometry::DummyNodes() {
     ibegf = iendf + 1;
     ibegn = iendn + 1;
   }
-
-  delete[] marker;
-
+  marker.clear();
   totNodes = phyNodes + idn;
 }
 
 void Geometry::GenerateEdgeList() {
   bool quit;
   int i, j, d, ibn, ie, it, n;
-  EdgeI *point, *prev;
-  tmpElist = new EdgeList[phyNodes];
+  auto point = std::make_shared<EdgeI>();
+  auto prev = std::make_shared<EdgeI>();
+  tmpElist.resize(totNodes);
 
   for (int i = 0; i < phyNodes; ++i) {
     tmpElist[i].list = nullptr;
@@ -235,7 +204,7 @@ void Geometry::GenerateEdgeList() {
 
       if (tmpElist[i].list == nullptr) {
         phyEdges++;
-        tmpElist[i].list = new EdgeI;
+        tmpElist[i].list = std::make_shared<EdgeI>();
         tmpElist[i].list->j = j;
         tmpElist[i].list->edge = -1;
         tmpElist[i].list->next = nullptr;
@@ -246,7 +215,7 @@ void Geometry::GenerateEdgeList() {
         do {
           if (point == nullptr) {
             phyEdges++;
-            point = new EdgeI;
+            point = std::make_shared<EdgeI>();
             point->j = j;
             point->edge = -1;
             point->next = nullptr;
@@ -264,7 +233,7 @@ void Geometry::GenerateEdgeList() {
 
   totEdges = phyEdges + totNodes - phyNodes;
 
-  edge = new Edge[totEdges];
+  edge.resize(totEdges);
 
   ie = 0;
 
@@ -308,14 +277,14 @@ void Geometry::printInfo() {
 }
 
 void Geometry::ComputeMetrics() {
-  sij = new Node[totEdges];
-  vol = new double[totNodes];
-  sbf = new Node[numBoundFaces];
-  sproj = new Node[totNodes];
+  sij.resize(totEdges);
+  vol.resize(totNodes);
+  sbf.resize(numBoundFaces);
+  sproj.resize(totNodes);
 
   FaceVectorsVolumes();
 
-  DeleteTmpElist();
+  tmpElist.clear();
 
   FaceVectorsVolumesBound();
 
@@ -329,12 +298,12 @@ void Geometry::ComputeMetrics() {
 void Geometry::FaceVectorsVolumes() {
   int d, i, j, ie, it, n;
   double x1, y1, x2, y2, x3, y3, area, pvol, cx, cy, sx, sy, vprod;
-  EdgeI *point;
+  auto point = std::make_shared<EdgeI>();
 
   Node node{0.0, 0.0};
 
-  std::fill(sij, sij + totEdges, node);
-  std::fill(vol, vol + totNodes, 0.0);
+  std::fill(sij.begin(), sij.end(), node);
+  std::fill(vol.begin(), vol.end(), 0.0);
 
   for (it = 0; it < numTria; ++it) {
     x1 = coords[tria[it].node[0]].x;
@@ -397,33 +366,12 @@ void Geometry::FaceVectorsVolumes() {
   }
 }
 
-void Geometry::DeleteTmpElist() {
-  int i;
-  EdgeI *point, *prev;
-
-  if (tmpElist == nullptr) {
-    return;
-  }
-
-  for (i = 0; i < phyNodes; ++i) {
-    point = tmpElist[i].list;
-    if (point != nullptr) {
-      do {
-        prev = point;
-        point = point->next;
-        delete prev;
-      } while (point != nullptr);
-    }
-  }
-  delete[] tmpElist;
-  tmpElist = nullptr;
-}
-
 void Geometry::FaceVectorsVolumesBound() {
-  bool flag, *marker;
+  bool flag;
+  std::vector<bool> marker;
   int d, i, j, ibegf, ibegn, iendf, iendn, itype, n1, n2, nt1, nt2, nt3;
   int ib, ibf, ibn, ie, it, n;
-  int *btria;
+  std::vector<int> btria;
   double cx, cy, xm, ym, vprod;
 
   ibegn = 0;
@@ -440,17 +388,17 @@ void Geometry::FaceVectorsVolumesBound() {
     ibegn = iendn + 1;
   }
 
-  marker = new bool[phyNodes];
+  marker.resize(phyNodes);
 
-  std::fill(marker, marker + phyNodes, false);
+  std::fill(marker.begin(), marker.end(), false);
 
   for (ibf = 0; ibf < numBoundFaces; ++ibf) {
     marker[boundaryFace[ibf].nodei] = true;
     marker[boundaryFace[ibf].nodej] = true;
   }
 
-  btria = new int[numBoundFaces];
-  std::fill(btria, btria + numBoundFaces, -1);
+  btria.resize(numBoundFaces);
+  std::fill(btria.begin(), btria.end(), -1);
 
   for (n = 0; n < 3; ++n) {
     for (it = 0; it < numTria; ++it) {
@@ -513,8 +461,8 @@ void Geometry::FaceVectorsVolumesBound() {
     }
   }
 
-  delete[] marker;
-  delete[] btria;
+  marker.clear();
+  btria.clear();
 
   ibegf = 0;
   ibegn = 0;
@@ -564,7 +512,7 @@ void Geometry::FaceVectorsVolumesBound() {
 void Geometry::CheckMetrics() {
   int i, j, ib, ibf, ibn, ie, ibegf, iendf, ibegn, iendn;
   double volmin, volmax, s, smax;
-  Node *fvecSum;
+  std::vector<Node> fvecSum;
 
   volmin = +1.0e+32;
   volmax = -1.0e+32;
@@ -574,9 +522,9 @@ void Geometry::CheckMetrics() {
     volmax = std::max(volmax, vol[i]);
   }
 
-  fvecSum = new Node[phyNodes];
+  fvecSum.resize(phyNodes);
   Node node{0.0, 0.0};
-  std::fill(fvecSum, fvecSum + phyNodes, node);
+  std::fill(fvecSum.begin(), fvecSum.end(), node);
 
   for (ie = 0; ie < phyEdges; ++ie) {
     i = edge[ie].nodei;
@@ -629,18 +577,16 @@ void Geometry::CheckMetrics() {
   std::cout << " max. sum(S) = " << smax << "\n";
   std::cout << " min. volume = " << volmin << "\n";
   std::cout << " max. volume = " << volmax << "\n";
-
-  delete[] fvecSum;
 }
 
 void Geometry::FaceVectorsSymm() {
   int i, j, ib, ibf, ibn, ie, ibegf, ibegn, iendf, iendn;
-  int *marker;
+  std::vector<int> marker;
   double sx, sy;
 
-  marker = new int[phyNodes];
+  marker.resize(phyNodes);
 
-  std::fill(marker, marker + phyNodes, -1);
+  std::fill(marker.begin(), marker.end(), -1);
 
   ibegf = 0;
   ibegn = 0;
@@ -678,7 +624,6 @@ void Geometry::FaceVectorsSymm() {
         sij[ie].y = 0.0;
     }
   }
-  delete[] marker;
 }
 
 void Geometry::volumeProjections() {

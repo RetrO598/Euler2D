@@ -1,5 +1,5 @@
 #pragma once
-
+#include <memory>
 namespace preprocess {
 #define fileEOF "end of file"
 
@@ -27,10 +27,10 @@ struct idBoundary {
 
 struct EdgeI {
   int j, edge;
-  EdgeI *next;
+  std::shared_ptr<EdgeI> next;
 };
 
 struct EdgeList {
-  EdgeI *list;
+  std::shared_ptr<EdgeI> list;
 };
 } // namespace preprocess
