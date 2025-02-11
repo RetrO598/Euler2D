@@ -1,9 +1,9 @@
 #include <memory>
 #include <pre/geometry.h>
+#include <pre/macro.h>
 
 #include <algorithm>
 #include <cmath>
-#include <cstddef>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -48,16 +48,11 @@ void Geometry::ReadGrid() {
   boundaryNode.resize(numBoundNodes);
   boundaryFace.resize(numBoundFaces);
 
-  for (int i = 0; i < numBoundNodes; ++i) {
-    boundaryNode[i].node = -777;
-    boundaryNode[i].dummy = -777;
-    boundaryNode[i].indexEdge = -777;
-  }
+  auto node = BoundaryNode{-777, -777, -777};
+  std::fill(boundaryNode.begin(), boundaryNode.end(), node);
 
-  for (int i = 0; i < numBoundFaces; ++i) {
-    boundaryFace[i].nodei = -777;
-    boundaryFace[i].nodej = -777;
-  }
+  auto face = BoundaryFace{-777, -777};
+  std::fill(boundaryFace.begin(), boundaryFace.end(), face);
 
   int ibegf = 0;
   int iendf = 0;
