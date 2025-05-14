@@ -1,4 +1,3 @@
-#include <memory>
 #include <pre/parameter.h>
 #include <solver/FVMSolver.h>
 #include <solver/limiter.h>
@@ -8,6 +7,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
+#include <memory>
 #include <vector>
 
 namespace solver {
@@ -43,11 +43,11 @@ FVMSolver::FVMSolver(preprocess::parameter &parameter,
 
   cl = 0.0;
 
-  limiter = std::make_unique<NishikawaR3>(param, geom, cv, dv, umin, umax, lim,
-                                          gradx, grady);
+  limiter = std::make_unique<VenkatakrishnanLimiter>(param, geom, cv, dv, umin,
+                                                     umax, lim, gradx, grady);
 
-  numeric = std::make_unique<NumericSLAU2>(param, geom, cv, dv, diss, rhs, lim,
-                                           gradx, grady);
+  numeric = std::make_unique<NumericRoe>(param, geom, cv, dv, diss, rhs, lim,
+                                         gradx, grady);
 
   rhsIter.reserve(nNodes);
   rhsOld.reserve(nNodes);
@@ -185,4 +185,4 @@ void FVMSolver::ConvToDepend(int i) {
     dvlam[i].lambda = dvlam[i].mu * (param.Cp / param.Prandtl);
   }
 }
-} // namespace solver
+}  // namespace solver

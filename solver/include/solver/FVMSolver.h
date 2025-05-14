@@ -1,17 +1,17 @@
 #pragma once
 
-#include <memory>
 #include <pre/geometry.h>
 #include <pre/parameter.h>
 #include <solver/limiter.h>
 #include <solver/numeric.h>
 #include <solver/variableDef.h>
 
+#include <memory>
 #include <vector>
 namespace solver {
 
 class FVMSolver {
-public:
+ public:
   FVMSolver(preprocess::parameter &parameter,
             const preprocess::Geometry &geometry);
 
@@ -27,11 +27,14 @@ public:
   void BoundWallVisc(int beg, int end);
 
   void Gradients();
+  void GradientsVisc();
 
   void PeriodicCons(std::vector<CONS_VAR> &var);
   void PeriodicPrim(std::vector<PRIM_VAR> &var);
   void PeriodicInt(std::vector<int> &var);
-  void PeriodicVisc();
+  void PeriodicVisc(std::vector<double> &gradTx, std::vector<double> &gradTy);
+
+  void fluxVisc(double beta);
 
   void solve();
 
@@ -65,7 +68,7 @@ public:
 
   int iter;
 
-private:
+ private:
   std::vector<CONS_VAR> cv;
   std::vector<CONS_VAR> cvOld;
   std::vector<CONS_VAR> diss;
@@ -98,4 +101,4 @@ private:
   double drho;
   double drho1;
 };
-} // namespace solver
+}  // namespace solver

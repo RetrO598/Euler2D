@@ -1,6 +1,7 @@
 #include <solver/FVMSolver.h>
 
 #include <cmath>
+#include <vector>
 
 namespace solver {
 void FVMSolver::BoundaryConditions() {
@@ -371,4 +372,23 @@ void FVMSolver::PeriodicInt(std::vector<int> &var) {
   }
 }
 
-} // namespace solver
+void FVMSolver::PeriodicVisc(std::vector<double> &gradTx,
+                             std::vector<double> &gradTy) {
+  int ibegn = 0;
+  for (int ib = 0; ib < geom.numBoundSegs; ++ib) {
+    int iendn = geom.ibound[ib].bnodeIndex;
+    if (geom.BoundTypes[ib] >= 700 && geom.BoundTypes[ib] < 800) {
+      for (int ibn = ibegn; ibn <= iendn; ++ibn) {
+        int i = geom.boundaryNode[ibn].node;
+        int j = geom.boundaryNode[ibn].dummy;
+        gradTx[i] += gradTx[j];
+        gradTy[i] += gradTy[j];
+        gradTx[j] = gradTx[i];
+        gradTy[j] = gradTx[i];
+      }
+    }
+    ibegn = iendn + 1;
+  }
+}
+
+}  // namespace solver

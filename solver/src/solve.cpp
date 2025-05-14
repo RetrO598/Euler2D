@@ -2,6 +2,8 @@
 
 #include <cmath>
 
+#include "pre/parameter.h"
+
 namespace solver {
 void FVMSolver::solve() {
   for (int i = 0; i < geom.totNodes; ++i) {
@@ -13,6 +15,12 @@ void FVMSolver::solve() {
   for (int irk = 0; irk < param.temperalStages; ++irk) {
     if (param.dissipationEval[irk]) {
       numeric->DissipInit(irk, param.dissipationBlend[irk]);
+    }
+
+    if (param.dissipationEval[irk] &&
+        param.equationtype_ == preprocess::equationType::NavierStokes) {
+      GradientsVisc();
+      fluxVisc(param.dissipationBlend[irk]);
     }
 
     if (param.dissipationEval[irk]) {
