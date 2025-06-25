@@ -12,12 +12,14 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   std::string inputFile = argv[1];
-  preprocess::simpleReader reader(inputFile);
+  // preprocess::simpleReader reader(inputFile);
+  preprocess::yamlReader reader(inputFile);
   preprocess::parameter param;
-  reader.customRead(param);
+  // reader.customRead(param);
+  reader.read(param);
   param.printParameters();
 
-  reader.close();
+  // reader.close();
 
   preprocess::Geometry geometry(param.gridFile);
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <pre/parameter.h>
+#include <yaml-cpp/yaml.h>
 
 #include <cstddef>
 #include <fstream>
@@ -53,5 +54,15 @@ class simpleReader {
   std::ifstream file_;
   std::streampos last_pos;
   std::string commentChar_;
+};
+
+class yamlReader {
+ public:
+  yamlReader(const std::string &filename) : filename(filename) {}
+
+  void read(parameter &param);
+
+ private:
+  std::string filename;
 };
 }  // namespace preprocess
