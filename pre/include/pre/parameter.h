@@ -39,37 +39,37 @@ struct parameter {
   equationType equationtype_;
 
   // some parameters
-  float gamma, Cp, Re, refVel, refRho, Prandtl, refVisc, refMach2;
+  double gamma, Cp, Re, refVel, refRho, Prandtl, refVisc, refMach2;
 
   // Physics parameters for external flow
-  float MaInfinity, Aoa, PsInfinity, TsInfinity, RhoInfinity, velInfinity,
+  double MaInfinity, Aoa, PsInfinity, TsInfinity, RhoInfinity, velInfinity,
       uInfinity, vInfinity;
 
   // Physics parameters for internal flow
-  float PtInlet, TtInlet, flowAngIn, PsOutlet, approxFlowAngOut, PsRatio;
+  double PtInlet, TtInlet, flowAngIn, PsOutlet, approxFlowAngOut, PsRatio;
 
   // Geometrical reference values
-  float xRefPoint, yRefPoint, chord;
+  double xRefPoint, yRefPoint, chord;
 
   // Iteration control
   size_t maxIteration, numberIterDump;
-  float convTol;
+  double convTol;
   bool restart;
 
   // Numerical parameter
-  float CFL, imResiSmooth;
+  double CFL, imResiSmooth;
   int numOfIterSmooth;
   timeStep timestep_;
   bool preCon;
-  float preConFactor;
+  double preConFactor;
   int spatialOrder;
-  float entropyCorreRoe, limiterCoeff;
+  double entropyCorreRoe, limiterCoeff;
   bool farCorrect;
 
   int temperalStages;
 
-  std::vector<float> stageCoeff;
-  std::vector<float> dissipationBlend;
+  std::vector<double> stageCoeff;
+  std::vector<double> dissipationBlend;
   std::vector<int> dissipationEval;
 };
 
