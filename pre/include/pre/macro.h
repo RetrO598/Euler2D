@@ -1,4 +1,5 @@
 #pragma once
+#include <array>
 #include <memory>
 namespace preprocess {
 #define fileEOF "end of file"
@@ -25,6 +26,11 @@ struct idBoundary {
   int bfaceIndex, bnodeIndex;
 };
 
+struct vertex {
+  int nodeIdx;
+  std::array<double, 2> normal{};
+};
+
 struct EdgeI {
   int j, edge;
   std::shared_ptr<EdgeI> next;
@@ -33,4 +39,4 @@ struct EdgeI {
 struct EdgeList {
   std::shared_ptr<EdgeI> list;
 };
-} // namespace preprocess
+}  // namespace preprocess

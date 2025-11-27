@@ -15,9 +15,7 @@
 namespace preprocess {
 Geometry::Geometry(const std::string &filename, const std::string &commentChar)
     : gridReader(filename, commentChar) {
-  totNodes = 0;
   phyNodes = 0;
-  totEdges = 0;
   phyEdges = 0;
   numTria = 0;
   numBoundSegs = 0;
@@ -46,6 +44,7 @@ void Geometry::ReadGrid() {
   numBoundNodes = ibound[numBoundSegs - 1].bnodeIndex + 1;
 
   boundaryNode.resize(numBoundNodes);
+  vertexList.resize(numBoundNodes);
   boundaryFace.resize(numBoundFaces);
 
   auto node = BoundaryNode{-777, -777, -777};
@@ -68,6 +67,7 @@ void Geometry::ReadGrid() {
             boundaryNode[ibn].dummy;
         boundaryNode[ibn].node--;
         boundaryNode[ibn].dummy--;
+        vertexList[ibn].nodeIdx = boundaryNode[ibn].node;
       }
     } else {
       for (int ibf = ibegf; ibf <= iendf; ++ibf) {
@@ -90,7 +90,7 @@ void Geometry::ReadGrid() {
 
   DummyNodes();
 
-  coords.resize(totNodes);
+  coords.resize(phyNodes);
 
   for (int i = 0; i < phyNodes; ++i) {
     str = gridReader.readLineFiltered();
@@ -145,11 +145,12 @@ void Geometry::DummyNodes() {
             throw std::runtime_error("Max. number of boundary nodes exceeded.");
           }
           boundaryNode[ibegn].node = i;
-          if (flag) {
-            boundaryNode[ibegn].dummy = phyNodes + idn;
-            boundaryNode[ibegn].indexEdge = -1;
-            idn++;
-          }
+          vertexList[ibegn].nodeIdx = i;
+          // if (flag) {
+          //   boundaryNode[ibegn].dummy = phyNodes + idn;
+          //   boundaryNode[ibegn].indexEdge = -1;
+          //   idn++;
+          // }
           ibegn++;
         }
       }
@@ -166,7 +167,6 @@ void Geometry::DummyNodes() {
     ibegn = iendn + 1;
   }
   marker.clear();
-  totNodes = phyNodes + idn;
 }
 
 void Geometry::GenerateEdgeList() {
@@ -174,7 +174,7 @@ void Geometry::GenerateEdgeList() {
   int i, j, d, ibn, ie, it, n;
   auto point = std::make_shared<EdgeI>();
   auto prev = std::make_shared<EdgeI>();
-  tmpElist.resize(totNodes);
+  tmpElist.resize(phyNodes);
 
   for (int i = 0; i < phyNodes; ++i) {
     tmpElist[i].list = nullptr;
@@ -226,9 +226,7 @@ void Geometry::GenerateEdgeList() {
     }
   }
 
-  totEdges = phyEdges + totNodes - phyNodes;
-
-  edge.resize(totEdges);
+  edge.resize(phyEdges);
 
   ie = 0;
 
@@ -247,35 +245,34 @@ void Geometry::GenerateEdgeList() {
     throw std::runtime_error("did not get correct number of interior edges.");
   }
 
-  for (ibn = 0; ibn < numBoundNodes; ++ibn) {
-    if (boundaryNode[ibn].indexEdge == -1) {
-      edge[ie].nodei = boundaryNode[ibn].node;
-      edge[ie].nodej = boundaryNode[ibn].dummy;
-      boundaryNode[ibn].indexEdge = ie;
-      ie++;
-    }
-  }
+  // for (ibn = 0; ibn < numBoundNodes; ++ibn) {
+  //   if (boundaryNode[ibn].indexEdge == -1) {
+  //     edge[ie].nodei = boundaryNode[ibn].node;
+  //     edge[ie].nodej = boundaryNode[ibn].dummy;
+  //     boundaryNode[ibn].indexEdge = ie;
+  //     ie++;
+  //   }
+  // }
 
-  if (ie != totEdges) {
+  if (ie != phyEdges) {
     throw std::runtime_error("did not get the coorect number of dummy edges.");
   }
 }
 
 void Geometry::printInfo() {
   std::cout << "No. of interior nodes: " << phyNodes << "\n";
-  std::cout << "No. of dummy nodes: " << totNodes - phyNodes << "\n";
   std::cout << "No. of grid cells :" << numTria << "\n";
   std::cout << "No. of interior edges: " << phyEdges << "\n";
-  std::cout << "Total number of edges: " << totEdges << "\n";
+  std::cout << "Total number of edges: " << phyEdges << "\n";
   std::cout << "No. of boundary faces: " << numBoundFaces << "\n";
   std::cout << "No. of boundary nodes: " << numBoundNodes << "\n";
 }
 
 void Geometry::ComputeMetrics() {
-  sij.resize(totEdges);
-  vol.resize(totNodes);
+  sij.resize(phyEdges);
+  vol.resize(phyNodes);
   sbf.resize(numBoundFaces);
-  sproj.resize(totNodes);
+  sproj.resize(phyNodes);
 
   FaceVectorsVolumes();
 
@@ -476,13 +473,17 @@ void Geometry::FaceVectorsVolumesBound() {
           if (boundaryNode[ibn].node == n1) {
             ie = boundaryNode[ibn].indexEdge;
             n1 = -777;
-            sij[ie].x += 0.5 * sbf[ibf].x;
-            sij[ie].y += 0.5 * sbf[ibf].y;
+            // sij[ie].x += 0.5 * sbf[ibf].x;
+            // sij[ie].y += 0.5 * sbf[ibf].y;
+            vertexList[ibn].normal[0] += 0.5 * sbf[ibf].x;
+            vertexList[ibn].normal[1] += 0.5 * sbf[ibf].y;
           } else if (boundaryNode[ibn].node == n2) {
             ie = boundaryNode[ibn].indexEdge;
             n2 = -777;
-            sij[ie].x += 0.5 * sbf[ibf].x;
-            sij[ie].y += 0.5 * sbf[ibf].y;
+            // sij[ie].x += 0.5 * sbf[ibf].x;
+            // sij[ie].y += 0.5 * sbf[ibf].y;
+            vertexList[ibn].normal[0] += 0.5 * sbf[ibf].x;
+            vertexList[ibn].normal[1] += 0.5 * sbf[ibf].y;
           }
           if (n1 < 0 && n2 < 0) {
             break;
@@ -495,13 +496,13 @@ void Geometry::FaceVectorsVolumesBound() {
     ibegn = iendn + 1;
   }
 
-  for (ie = phyEdges; ie < totEdges; ++ie) {
-    i = edge[ie].nodei;
-    j = edge[ie].nodej;
-    coords[j].x = coords[i].x;
-    coords[j].y = coords[i].y;
-    vol[j] = vol[i];
-  }
+  // for (ie = phyEdges; ie < totEdges; ++ie) {
+  //   i = edge[ie].nodei;
+  //   j = edge[ie].nodej;
+  //   coords[j].x = coords[i].x;
+  //   coords[j].y = coords[i].y;
+  //   vol[j] = vol[i];
+  // }
 }
 
 void Geometry::CheckMetrics() {
@@ -626,7 +627,7 @@ void Geometry::volumeProjections() {
   int i, j, ib, ibf, ibn, ie;
   double sx, sy;
 
-  for (i = 0; i < totNodes; ++i) {
+  for (i = 0; i < phyNodes; ++i) {
     sproj[i].x = 0.0;
     sproj[i].y = 0.0;
   }
@@ -680,21 +681,21 @@ void Geometry::volumeProjections() {
 void Geometry::outputMeshInfo() {
   std::ofstream outputFile1("sij.txt");
 
-  for (int i = 0; i < totEdges; ++i) {
+  for (int i = 0; i < phyEdges; ++i) {
     outputFile1 << sij[i].x << " " << sij[i].y << "\n";
   }
 
   outputFile1.close();
 
   std::ofstream outputFile2("edge.txt");
-  for (int i = 0; i < totEdges; ++i) {
+  for (int i = 0; i < phyEdges; ++i) {
     outputFile2 << edge[i].nodei << " " << edge[i].nodej << "\n";
   }
 
   outputFile2.close();
 
   std::ofstream outputFile3("vol.txt");
-  for (int i = 0; i < totNodes; ++i) {
+  for (int i = 0; i < phyNodes; ++i) {
     outputFile3 << vol[i] << "\n";
   }
 
@@ -708,7 +709,7 @@ void Geometry::outputMeshInfo() {
   outputFile4.close();
 
   std::ofstream outputFile5("sproj.txt");
-  for (int i = 0; i < totNodes; ++i) {
+  for (int i = 0; i < phyNodes; ++i) {
     outputFile5 << sproj[i].x << " " << sproj[i].y << "\n";
   }
 

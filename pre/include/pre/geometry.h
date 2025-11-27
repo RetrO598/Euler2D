@@ -1,5 +1,4 @@
 #pragma once
-#include <memory>
 #include <pre/macro.h>
 #include <pre/reader.h>
 
@@ -8,9 +7,8 @@
 namespace preprocess {
 
 class Geometry {
-public:
-  int totNodes, phyNodes, totEdges, phyEdges, numTria, numBoundSegs,
-      numBoundFaces, numBoundNodes;
+ public:
+  int phyNodes, phyEdges, numTria, numBoundSegs, numBoundFaces, numBoundNodes;
 
   std::vector<int> BoundTypes;
   std::vector<Tria> tria;
@@ -24,6 +22,7 @@ public:
   std::vector<Node> sbf;
   std::vector<Node> sproj;
   std::vector<std::string> bname;
+  std::vector<vertex> vertexList;
 
   Geometry(const std::string &filename, const std::string &commentChar = "#");
   Geometry(const Geometry &geomtry) = delete;
@@ -38,7 +37,7 @@ public:
   void ReadGrid();
   void outputMeshInfo();
 
-private:
+ private:
   simpleReader gridReader;
   std::vector<EdgeList> tmpElist;
 
@@ -50,4 +49,4 @@ private:
   void FaceVectorsVolumesBound();
   void volumeProjections();
 };
-} // namespace preprocess
+}  // namespace preprocess

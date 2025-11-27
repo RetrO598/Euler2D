@@ -51,10 +51,11 @@ void FVMSolver::BoundInflow(int beg, int end) {
     int idn = geom.boundaryNode[ib].dummy;
     int ie = geom.boundaryNode[ib].indexEdge;
 
-    double ds = std::sqrt(geom.sij[ie].x * geom.sij[ie].x +
-                          geom.sij[ie].y * geom.sij[ie].y);
-    double sxn = geom.sij[ie].x / ds;
-    double syn = geom.sij[ie].y / ds;
+    double ds = std::sqrt(
+        geom.vertexList[ib].normal[0] * geom.vertexList[ib].normal[0] +
+        geom.vertexList[ib].normal[1] * geom.vertexList[ib].normal[1]);
+    double sxn = geom.vertexList[ib].normal[0] / ds;
+    double syn = geom.vertexList[ib].normal[1] / ds;
 
     double gam1 = dv[ibn].gamma - 1.0;
     double ggm1 = dv[ibn].gamma / gam1;
@@ -103,7 +104,8 @@ void FVMSolver::BoundInflow(int beg, int end) {
     if (param.equationtype_ == preprocess::equationType::NavierStokes) {
       ViscousNumericBound::ComputeResidual(
           cv[ibn], dummy, dvlam[ibn], dummyVisc, gradx[ibn], grady[ibn],
-          gradTx[ibn], gradTy[ibn], geom.sij[ie].x, geom.sij[ie].y, rhs[ibn]);
+          gradTx[ibn], gradTy[ibn], geom.vertexList[ib].normal[0],
+          geom.vertexList[ib].normal[1], rhs[ibn]);
     }
   }
 }
@@ -143,10 +145,11 @@ void FVMSolver::BoundFarfield(int beg, int end) {
       farfield.dens =
           param.RhoInfinity * std::pow(farfield.press / param.PsInfinity, gmr);
 
-      double ds = std::sqrt(geom.sij[ie].x * geom.sij[ie].x +
-                            geom.sij[ie].y * geom.sij[ie].y);
-      double sxn = geom.sij[ie].x / ds;
-      double syn = geom.sij[ie].y / ds;
+      double ds = std::sqrt(
+          geom.vertexList[ib].normal[0] * geom.vertexList[ib].normal[0] +
+          geom.vertexList[ib].normal[1] * geom.vertexList[ib].normal[1]);
+      double sxn = geom.vertexList[ib].normal[0] / ds;
+      double syn = geom.vertexList[ib].normal[1] / ds;
 
       double rhoe = cv[ibn].dens;
       double ue = cv[ibn].xmom / rhoe;
@@ -199,8 +202,8 @@ void FVMSolver::BoundFarfield(int beg, int end) {
         if (param.equationtype_ == preprocess::equationType::NavierStokes) {
           ViscousNumericBound::ComputeResidual(
               cv[ibn], dummy, dvlam[ibn], dummyVisc, gradx[ibn], grady[ibn],
-              gradTx[ibn], gradTy[ibn], geom.sij[ie].x, geom.sij[ie].y,
-              rhs[ibn]);
+              gradTx[ibn], gradTy[ibn], geom.vertexList[ib].normal[0],
+              geom.vertexList[ib].normal[1], rhs[ibn]);
         }
 
       } else {
@@ -225,8 +228,8 @@ void FVMSolver::BoundFarfield(int beg, int end) {
           if (param.equationtype_ == preprocess::equationType::NavierStokes) {
             ViscousNumericBound::ComputeResidual(
                 cv[ibn], dummy, dvlam[ibn], dummyVisc, gradx[ibn], grady[ibn],
-                gradTx[ibn], gradTy[ibn], geom.sij[ie].x, geom.sij[ie].y,
-                rhs[ibn]);
+                gradTx[ibn], gradTy[ibn], geom.vertexList[ib].normal[0],
+                geom.vertexList[ib].normal[1], rhs[ibn]);
           }
         } else {
           CONS_VAR dummy;
@@ -246,8 +249,8 @@ void FVMSolver::BoundFarfield(int beg, int end) {
           if (param.equationtype_ == preprocess::equationType::NavierStokes) {
             ViscousNumericBound::ComputeResidual(
                 cv[ibn], dummy, dvlam[ibn], dummyVisc, gradx[ibn], grady[ibn],
-                gradTx[ibn], gradTy[ibn], geom.sij[ie].x, geom.sij[ie].y,
-                rhs[ibn]);
+                gradTx[ibn], gradTy[ibn], geom.vertexList[ib].normal[0],
+                geom.vertexList[ib].normal[1], rhs[ibn]);
           }
         }
       }
@@ -264,10 +267,11 @@ void FVMSolver::BoundFarfield(int beg, int end) {
       farfield.vely = param.vInfinity;
       farfield.press = param.PsInfinity;
 
-      double ds = std::sqrt(geom.sij[ie].x * geom.sij[ie].x +
-                            geom.sij[ie].y * geom.sij[ie].y);
-      double sxn = geom.sij[ie].x / ds;
-      double syn = geom.sij[ie].y / ds;
+      double ds = std::sqrt(
+          geom.vertexList[ib].normal[0] * geom.vertexList[ib].normal[0] +
+          geom.vertexList[ib].normal[1] * geom.vertexList[ib].normal[1]);
+      double sxn = geom.vertexList[ib].normal[0] / ds;
+      double syn = geom.vertexList[ib].normal[1] / ds;
 
       double rhoe = cv[ibn].dens;
       double ue = cv[ibn].xmom / rhoe;
@@ -319,8 +323,8 @@ void FVMSolver::BoundFarfield(int beg, int end) {
         if (param.equationtype_ == preprocess::equationType::NavierStokes) {
           ViscousNumericBound::ComputeResidual(
               cv[ibn], dummy, dvlam[ibn], dummyVisc, gradx[ibn], grady[ibn],
-              gradTx[ibn], gradTy[ibn], geom.sij[ie].x, geom.sij[ie].y,
-              rhs[ibn]);
+              gradTx[ibn], gradTy[ibn], geom.vertexList[ib].normal[0],
+              geom.vertexList[ib].normal[1], rhs[ibn]);
         }
       } else {
         if (qn < 0.0) {
@@ -342,8 +346,8 @@ void FVMSolver::BoundFarfield(int beg, int end) {
           if (param.equationtype_ == preprocess::equationType::NavierStokes) {
             ViscousNumericBound::ComputeResidual(
                 cv[ibn], dummy, dvlam[ibn], dummyVisc, gradx[ibn], grady[ibn],
-                gradTx[ibn], gradTy[ibn], geom.sij[ie].x, geom.sij[ie].y,
-                rhs[ibn]);
+                gradTx[ibn], gradTy[ibn], geom.vertexList[ib].normal[0],
+                geom.vertexList[ib].normal[1], rhs[ibn]);
           }
         } else {
           CONS_VAR dummy;
@@ -363,8 +367,8 @@ void FVMSolver::BoundFarfield(int beg, int end) {
           if (param.equationtype_ == preprocess::equationType::NavierStokes) {
             ViscousNumericBound::ComputeResidual(
                 cv[ibn], dummy, dvlam[ibn], dummyVisc, gradx[ibn], grady[ibn],
-                gradTx[ibn], gradTy[ibn], geom.sij[ie].x, geom.sij[ie].y,
-                rhs[ibn]);
+                gradTx[ibn], gradTy[ibn], geom.vertexList[ib].normal[0],
+                geom.vertexList[ib].normal[1], rhs[ibn]);
           }
         }
       }
@@ -378,10 +382,11 @@ void FVMSolver::BoundOutflow(int beg, int end) {
     int idn = geom.boundaryNode[ib].dummy;
     int ie = geom.boundaryNode[ib].indexEdge;
 
-    double ds = std::sqrt(geom.sij[ie].x * geom.sij[ie].x +
-                          geom.sij[ie].y * geom.sij[ie].y);
-    double sxn = geom.sij[ie].x / ds;
-    double syn = geom.sij[ie].y / ds;
+    double ds = std::sqrt(
+        geom.vertexList[ib].normal[0] * geom.vertexList[ib].normal[0] +
+        geom.vertexList[ib].normal[1] * geom.vertexList[ib].normal[1]);
+    double sxn = geom.vertexList[ib].normal[0] / ds;
+    double syn = geom.vertexList[ib].normal[1] / ds;
 
     double gam1 = dv[ibn].gamma - 1.0;
     double rrho = 1.0 / cv[ibn].dens;
@@ -427,7 +432,8 @@ void FVMSolver::BoundOutflow(int beg, int end) {
     if (param.equationtype_ == preprocess::equationType::NavierStokes) {
       ViscousNumericBound::ComputeResidual(
           cv[ibn], dummy, dvlam[ibn], dummyVisc, gradx[ibn], grady[ibn],
-          gradTx[ibn], gradTy[ibn], geom.sij[ie].x, geom.sij[ie].y, rhs[ibn]);
+          gradTx[ibn], gradTy[ibn], geom.vertexList[ib].normal[0],
+          geom.vertexList[ib].normal[1], rhs[ibn]);
     }
   }
 }
