@@ -1,4 +1,3 @@
-#include <memory>
 #include <pre/geometry.h>
 #include <pre/macro.h>
 
@@ -7,6 +6,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -613,9 +613,9 @@ void Geometry::FaceVectorsSymm() {
     i = edge[ie].nodei;
     j = edge[ie].nodej;
     if (marker[i] != -1 && marker[j] != -1) {
-      if (marker[i] < 2) // x=const. plane
+      if (marker[i] < 2)  // x=const. plane
         sij[ie].x = 0.0;
-      else // y=const. plane
+      else  // y=const. plane
         sij[ie].y = 0.0;
     }
   }
@@ -714,4 +714,4 @@ void Geometry::outputMeshInfo() {
 
   outputFile5.close();
 }
-} // namespace preprocess
+}  // namespace preprocess

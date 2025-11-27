@@ -15,8 +15,15 @@ BaseLimiter::BaseLimiter(const preprocess::parameter &param,
                          std::vector<PRIM_VAR> &lim,
                          std::vector<PRIM_VAR> &gradx,
                          std::vector<PRIM_VAR> &grady)
-    : param(param), geom(geom), cv(cv), dv(dv), umin(umin), umax(umax),
-      lim(lim), gradx(gradx), grady(grady) {
+    : param(param),
+      geom(geom),
+      cv(cv),
+      dv(dv),
+      umin(umin),
+      umax(umax),
+      lim(lim),
+      gradx(gradx),
+      grady(grady) {
   limRef.dens = 0.0;
   limRef.press = 0.0;
   limRef.velx = 0.0;
@@ -134,7 +141,7 @@ void BaseLimiter::limiterInit() {
 
 void VenkatakrishnanLimiter::limiterUpdate() {
   double eps2[4];
-  for (int i = 0; i < geom.totNodes; ++i) {
+  for (int i = 0; i < geom.phyNodes; ++i) {
     lim[i].dens = 1.0;
     lim[i].velx = 1.0;
     lim[i].vely = 1.0;
@@ -247,7 +254,7 @@ void VenkatakrishnanLimiter::limiterUpdate() {
 void NishikawaR3::limiterUpdate() {
   double eps;
   PRIM_VAR init{1.0, 1.0, 1.0, 1.0};
-  lim.assign(geom.totNodes, {1.0, 1.0, 1.0, 1.0});
+  lim.assign(geom.phyNodes, {1.0, 1.0, 1.0, 1.0});
 
   double limfac3 = std::pow(param.limiterCoeff, 4);
   double rvolref = 1.0 / std::pow(volRef, 2);
@@ -387,4 +394,4 @@ void NishikawaR3::limiterUpdate() {
   }
 }
 
-} // namespace solver
+}  // namespace solver

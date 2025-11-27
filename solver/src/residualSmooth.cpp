@@ -32,7 +32,7 @@ void FVMSolver::ZeroRes() {
 }
 
 void FVMSolver::Irsmoo() {
-  for (int i = 0; i < geom.totNodes; ++i) {
+  for (int i = 0; i < geom.phyNodes; ++i) {
     nContr[i] = 0;
     rhsOld[i] = rhs[i];
   }
@@ -93,4 +93,4 @@ void FVMSolver::Irsmoo() {
     }
   }
 }
-} // namespace solver
+}  // namespace solver

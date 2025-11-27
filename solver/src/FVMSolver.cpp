@@ -15,7 +15,7 @@ namespace solver {
 FVMSolver::FVMSolver(preprocess::parameter &parameter,
                      const preprocess::Geometry &geometry)
     : param(parameter), geom(geometry) {
-  int nNodes = geom.totNodes;
+  int nNodes = geom.phyNodes;
   cv.reserve(nNodes);
   cvOld.reserve(nNodes);
   diss.reserve(nNodes);
@@ -46,8 +46,8 @@ FVMSolver::FVMSolver(preprocess::parameter &parameter,
   limiter = std::make_unique<VenkatakrishnanLimiter>(param, geom, cv, dv, umin,
                                                      umax, lim, gradx, grady);
 
-  numeric = std::make_unique<NumericSLAU2>(param, geom, cv, dv, diss, rhs, lim,
-                                           gradx, grady);
+  numeric = std::make_unique<NumericRoe>(param, geom, cv, dv, diss, rhs, lim,
+                                         gradx, grady);
 
   rhsIter.reserve(nNodes);
   rhsOld.reserve(nNodes);
@@ -67,7 +67,7 @@ void FVMSolver::initSolver() {
     init.ymom = param.RhoInfinity * param.vInfinity;
     init.ener = param.PsInfinity / gam1 +
                 0.5 * param.RhoInfinity * param.velInfinity * param.velInfinity;
-    cv.assign(geom.totNodes, init);
+    cv.assign(geom.phyNodes, init);
   } else {
     double xmin = 1.0e+32;
     double xmax = -1.0e+32;
@@ -90,7 +90,7 @@ void FVMSolver::initSolver() {
     double mach = std::sqrt(2.0 * ((param.TtInlet / temp) - 1.0) / gam1);
     double q = mach * cs;
 
-    for (int i = 0; i < geom.totNodes; ++i) {
+    for (int i = 0; i < geom.phyNodes; ++i) {
       double beta = param.flowAngIn + dbeta * (geom.coords[i].x - xmin) / dx;
       double p = pinl + dp * (geom.coords[i].x - xmin) / dx;
       rho = p / (rgas * temp);
@@ -130,7 +130,7 @@ void FVMSolver::ConvToDependAll() {
   double g1cp = gam1 * param.Cp;
 
   if (param.equationtype_ == preprocess::equationType::Euler) {
-    for (int i = 0; i < geom.totNodes; ++i) {
+    for (int i = 0; i < geom.phyNodes; ++i) {
       double rhoq = cv[i].xmom * cv[i].xmom + cv[i].ymom * cv[i].ymom;
       dv[i].press = gam1 * (cv[i].ener - 0.5 * rhoq / cv[i].dens);
       dv[i].temp = dv[i].press / (rgas * cv[i].dens);
@@ -143,7 +143,7 @@ void FVMSolver::ConvToDependAll() {
     double s2 = 288.16;
     double s12 = 1.0 + s1 / s2;
     double cppr = param.Cp / param.Prandtl;
-    for (int i = 0; i < geom.totNodes; ++i) {
+    for (int i = 0; i < geom.phyNodes; ++i) {
       double rhoq = cv[i].xmom * cv[i].xmom + cv[i].ymom * cv[i].ymom;
       dv[i].press = gam1 * (cv[i].ener - 0.5 * rhoq / cv[i].dens);
       dv[i].temp = dv[i].press / (rgas * cv[i].dens);

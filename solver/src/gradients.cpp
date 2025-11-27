@@ -13,8 +13,8 @@ void FVMSolver::Gradients() {
   init.vely = 0.0;
   init.press = 0.0;
 
-  gradx.assign(geom.totNodes, init);
-  grady.assign(geom.totNodes, init);
+  gradx.assign(geom.phyNodes, init);
+  grady.assign(geom.phyNodes, init);
 
   for (int ie = 0; ie < geom.phyEdges; ++ie) {
     int i = geom.edge[ie].nodei;
@@ -160,10 +160,10 @@ void FVMSolver::GradientsVisc() {
   init.vely = 0.0;
   init.press = 0.0;
 
-  gradx.assign(geom.totNodes, init);
-  grady.assign(geom.totNodes, init);
-  gradTx.assign(geom.totNodes, 0.0);
-  gradTy.assign(geom.totNodes, 0.0);
+  gradx.assign(geom.phyNodes, init);
+  grady.assign(geom.phyNodes, init);
+  gradTx.assign(geom.phyNodes, 0.0);
+  gradTy.assign(geom.phyNodes, 0.0);
 
   for (int ie = 0; ie < geom.phyEdges; ++ie) {
     int i = geom.edge[ie].nodei;

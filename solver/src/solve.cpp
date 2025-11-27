@@ -6,7 +6,7 @@
 
 namespace solver {
 void FVMSolver::solve() {
-  for (int i = 0; i < geom.totNodes; ++i) {
+  for (int i = 0; i < geom.phyNodes; ++i) {
     cvOld[i] = cv[i];
   }
 
@@ -30,7 +30,7 @@ void FVMSolver::solve() {
       limiter->limiterInit();
       limiter->limiterUpdate();
 
-      numeric->DissipNumeric(param.dissipationBlend[irk]);
+      // numeric->DissipNumeric(param.dissipationBlend[irk]);
     }
 
     numeric->FluxNumeric();

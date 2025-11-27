@@ -26,7 +26,7 @@ BaseNumeric::BaseNumeric(const preprocess::parameter &param,
 
 void BaseNumeric::DissipInit(const int &irk, const double &beta) {
   if (irk == 0 || beta > 0.99) {
-    for (int i = 0; i < geom.totNodes; ++i) {
+    for (int i = 0; i < geom.phyNodes; ++i) {
       diss[i].dens = 0.0;
       diss[i].xmom = 0.0;
       diss[i].ymom = 0.0;
@@ -34,7 +34,7 @@ void BaseNumeric::DissipInit(const int &irk, const double &beta) {
     }
   } else {
     double blend = 1.0 - beta;
-    for (int i = 0; i < geom.totNodes; ++i) {
+    for (int i = 0; i < geom.phyNodes; ++i) {
       diss[i].dens *= blend;
       diss[i].xmom *= blend;
       diss[i].ymom *= blend;
@@ -96,30 +96,6 @@ interfaceVar BaseNumeric::Interpolate(const int &i, const int &j) {
   return interfaceVar{left, right};
 }
 
-double NumericRoe::EntropyCorr(const double &z, const double &d) {
-  if (z > d) {
-    return z;
-  } else {
-    return 0.5 * (z * z + d * d) / d;
-  }
-}
-
-void NumericRoe::DissipNumeric(const double &beta) {
-  for (int ie = 0; ie < geom.totEdges; ++ie) {
-    int i = geom.edge[ie].nodei;
-    int j = geom.edge[ie].nodej;
-    diss[i].dens += 0.0;
-    diss[i].xmom += 0.0;
-    diss[i].ymom += 0.0;
-    diss[i].ener += 0.0;
-
-    diss[j].dens -= 0.0;
-    diss[j].xmom -= 0.0;
-    diss[j].ymom -= 0.0;
-    diss[j].ener -= 0.0;
-  }
-}
-
 void NumericRoe::ComputeResidual(const preprocess::parameter &param, double nx,
                                  double ny, double ds, PRIM_VAR vari,
                                  PRIM_VAR varj, double gammai, double gammaj,
@@ -129,7 +105,7 @@ void NumericRoe::ComputeResidual(const preprocess::parameter &param, double nx,
 };
 
 void NumericRoe::FluxNumeric() {
-  for (int i = 0; i < geom.totNodes; ++i) {
+  for (int i = 0; i < geom.phyNodes; ++i) {
     rhs[i].dens = -diss[i].dens;
     rhs[i].xmom = -diss[i].xmom;
     rhs[i].ymom = -diss[i].ymom;
@@ -154,22 +130,6 @@ void NumericRoe::FluxNumeric() {
   }
 
   FluxWalls();
-}
-
-void NumericSLAU2::DissipNumeric(const double &beta) {
-  for (int ie = 0; ie < geom.totEdges; ++ie) {
-    int i = geom.edge[ie].nodei;
-    int j = geom.edge[ie].nodej;
-    diss[i].dens += 0.0;
-    diss[i].xmom += 0.0;
-    diss[i].ymom += 0.0;
-    diss[i].ener += 0.0;
-
-    diss[j].dens -= 0.0;
-    diss[j].xmom -= 0.0;
-    diss[j].ymom -= 0.0;
-    diss[j].ener -= 0.0;
-  }
 }
 
 void NumericSLAU2::ComputeResidual(const preprocess::parameter &param,
@@ -183,7 +143,7 @@ void NumericSLAU2::ComputeResidual(const preprocess::parameter &param,
 
 void NumericSLAU2::FluxNumeric() {
   double fc[4];
-  for (int i = 0; i < geom.totNodes; ++i) {
+  for (int i = 0; i < geom.phyNodes; ++i) {
     rhs[i].dens = -diss[i].dens;
     rhs[i].xmom = -diss[i].xmom;
     rhs[i].ymom = -diss[i].ymom;
@@ -205,22 +165,6 @@ void NumericSLAU2::FluxNumeric() {
                     dv[j].gamma, rhs[i], rhs[j]);
   }
   FluxWalls();
-}
-
-void NumericAUSM::DissipNumeric(const double &beta) {
-  for (int ie = 0; ie < geom.totEdges; ++ie) {
-    int i = geom.edge[ie].nodei;
-    int j = geom.edge[ie].nodej;
-    diss[i].dens += 0.0;
-    diss[i].xmom += 0.0;
-    diss[i].ymom += 0.0;
-    diss[i].ener += 0.0;
-
-    diss[j].dens -= 0.0;
-    diss[j].xmom -= 0.0;
-    diss[j].ymom -= 0.0;
-    diss[j].ener -= 0.0;
-  }
 }
 
 void NumericAUSM::ComputeResidual(const preprocess::parameter &param, double nx,
@@ -233,7 +177,7 @@ void NumericAUSM::ComputeResidual(const preprocess::parameter &param, double nx,
 
 void NumericAUSM::FluxNumeric() {
   double fc[4];
-  for (int i = 0; i < geom.totNodes; ++i) {
+  for (int i = 0; i < geom.phyNodes; ++i) {
     rhs[i].dens = -diss[i].dens;
     rhs[i].xmom = -diss[i].xmom;
     rhs[i].ymom = -diss[i].ymom;
@@ -255,22 +199,6 @@ void NumericAUSM::FluxNumeric() {
                     dv[j].gamma, rhs[i], rhs[j]);
   }
   FluxWalls();
-}
-
-void NumericAUSMUP2::DissipNumeric(const double &beta) {
-  for (int ie = 0; ie < geom.totEdges; ++ie) {
-    int i = geom.edge[ie].nodei;
-    int j = geom.edge[ie].nodej;
-    diss[i].dens += 0.0;
-    diss[i].xmom += 0.0;
-    diss[i].ymom += 0.0;
-    diss[i].ener += 0.0;
-
-    diss[j].dens -= 0.0;
-    diss[j].xmom -= 0.0;
-    diss[j].ymom -= 0.0;
-    diss[j].ener -= 0.0;
-  }
 }
 
 void NumericAUSMUP2::ComputeResidual(const preprocess::parameter &param,
@@ -289,7 +217,7 @@ void NumericAUSMUP2::ComputeResidual(const preprocess::parameter &param,
 
 void NumericAUSMUP2::FluxNumeric() {
   double fc[4];
-  for (int i = 0; i < geom.totNodes; ++i) {
+  for (int i = 0; i < geom.phyNodes; ++i) {
     rhs[i].dens = -diss[i].dens;
     rhs[i].xmom = -diss[i].xmom;
     rhs[i].ymom = -diss[i].ymom;
