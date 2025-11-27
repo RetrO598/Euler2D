@@ -46,8 +46,8 @@ FVMSolver::FVMSolver(preprocess::parameter &parameter,
   limiter = std::make_unique<VenkatakrishnanLimiter>(param, geom, cv, dv, umin,
                                                      umax, lim, gradx, grady);
 
-  numeric = std::make_unique<NumericRoe>(param, geom, cv, dv, diss, rhs, lim,
-                                         gradx, grady);
+  numeric = std::make_unique<NumericSLAU2>(param, geom, cv, dv, diss, rhs, lim,
+                                           gradx, grady);
 
   rhsIter.reserve(nNodes);
   rhsOld.reserve(nNodes);

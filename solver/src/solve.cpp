@@ -34,6 +34,7 @@ void FVMSolver::solve() {
     }
 
     numeric->FluxNumeric();
+    BoundaryConditions();
     ZeroRes();
     PeriodicCons(rhs);
 
@@ -60,7 +61,7 @@ void FVMSolver::solve() {
 
     ConvToDependAll();
 
-    BoundaryConditions();
+    WallVisc();
   }
 }
 }  // namespace solver

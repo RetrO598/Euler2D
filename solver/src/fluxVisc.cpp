@@ -59,37 +59,13 @@ void FVMSolver::fluxVisc(double beta) {
     fv[1] = geom.sij[ie].x * tauxy + geom.sij[ie].y * tauyy;
     fv[2] = geom.sij[ie].x * phix + geom.sij[ie].y * phiy;
 
-    diss[i].xmom += fv[0] * beta;
-    diss[i].ymom += fv[1] * beta;
-    diss[i].ener += fv[2] * beta;
+    diss[i].xmom += fv[0];
+    diss[i].ymom += fv[1];
+    diss[i].ener += fv[2];
 
-    diss[j].xmom -= fv[0] * beta;
-    diss[j].ymom -= fv[1] * beta;
-    diss[j].ener -= fv[2] * beta;
-  }
-
-  for (int ie = geom.phyEdges; ie < geom.totEdges; ++ie) {
-    int i = geom.edge[ie].nodei;
-    int j = geom.edge[ie].nodej;
-
-    double uav = 0.5 * (cv[i].xmom / cv[i].dens + cv[j].xmom / cv[j].dens);
-    double vav = 0.5 * (cv[i].ymom / cv[i].dens + cv[j].ymom / cv[j].dens);
-    double mav = 0.5 * (dvlam[i].mu + dvlam[j].mu);
-    double kav = 0.5 * (dvlam[i].lambda + dvlam[j].lambda);
-
-    double tauxx = 2.0 / 3.0 * mav * (2.0 * gradx[i].velx - grady[i].vely);
-    double tauyy = 2.0 / 3.0 * mav * (2.0 * grady[i].vely - gradx[i].velx);
-    double tauxy = mav * (grady[i].velx + gradx[i].vely);
-    double phix = uav * tauxx + vav * tauxy + kav * gradTx[i];
-    double phiy = uav * tauxy + vav * tauyy + kav * gradTy[i];
-
-    fv[0] = geom.sij[ie].x * tauxx + geom.sij[ie].y * tauxy;
-    fv[1] = geom.sij[ie].x * tauxy + geom.sij[ie].y * tauyy;
-    fv[2] = geom.sij[ie].x * phix + geom.sij[ie].y * phiy;
-
-    diss[i].xmom += fv[0] * beta;
-    diss[i].ymom += fv[1] * beta;
-    diss[i].ener += fv[2] * beta;
+    diss[j].xmom -= fv[0];
+    diss[j].ymom -= fv[1];
+    diss[j].ener -= fv[2];
   }
 }
 }  // namespace solver

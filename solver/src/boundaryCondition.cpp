@@ -1,7 +1,20 @@
 #include <solver/FVMSolver.h>
 
 #include <cmath>
+#include <solver/numericTemplate.hpp>
 #include <vector>
+
+#include "pre/parameter.h"
+#include "solver/variableDef.h"
+/*
+100-199 = inflow
+200-299 = outflow
+300-399 = viscous wall
+400-499 = inviscid wall
+500-599 = symmetry line
+600-699 = farfield
+700-799 = periodic boundary
+*/
 
 namespace solver {
 void FVMSolver::BoundaryConditions() {
@@ -73,13 +86,25 @@ void FVMSolver::BoundInflow(int beg, int end) {
     uabsb = std::sqrt(uabsb);
     double ub = uabsb * std::cos(param.flowAngIn);
     double vb = uabsb * std::sin(param.flowAngIn);
+    CONS_VAR dummy;
+    dummy.dens = rhob;
+    dummy.xmom = rhob * ub;
+    dummy.ymom = rhob * vb;
+    dummy.ener = pb / gam1 + 0.5 * rhob * (ub * ub + vb * vb);
 
-    cv[idn].dens = rhob;
-    cv[idn].xmom = rhob * ub;
-    cv[idn].ymom = rhob * vb;
-    cv[idn].ener = pb / gam1 + 0.5 * rhob * (ub * ub + vb * vb);
+    auto dummyPrim = ConvertFromConv(dummy, dv[ibn].Cp, dv[ibn].gamma);
+    auto vari = ConvertFromConv(cv[ibn], dv[ibn].Cp, dv[ibn].gamma);
+    CONS_VAR dummyRhs;
+    numeric->ComputeResidual(param, sxn, syn, ds, vari, dummyPrim,
+                             dv[ibn].gamma, dv[ibn].gamma, rhs[ibn], dummyRhs);
 
-    ConvToDepend(idn);
+    auto dummyVisc = ConvertToVISC(dummy, dv[ibn].gamma, dv[ibn].Cp,
+                                   param.Prandtl, param.refVisc);
+    if (param.equationtype_ == preprocess::equationType::NavierStokes) {
+      ViscousNumericBound::ComputeResidual(
+          cv[ibn], dummy, dvlam[ibn], dummyVisc, gradx[ibn], grady[ibn],
+          gradTx[ibn], gradTy[ibn], geom.sij[ie].x, geom.sij[ie].y, rhs[ibn]);
+    }
   }
 }
 
@@ -153,29 +178,79 @@ void FVMSolver::BoundFarfield(int beg, int end) {
           pb = farfield.press;
         }
         double dprhoc = sgn * (pa - pb) / crho0;
-        cv[idn].dens = rhoa + (pb - pa) / (dv[ibn].cs * dv[ibn].cs);
-        cv[idn].xmom = cv[idn].dens * (ua + sxn * dprhoc);
-        cv[idn].ymom = cv[idn].dens * (va + syn * dprhoc);
-        cv[idn].ener =
-            pb / gam1 +
-            0.5 * (cv[idn].xmom * cv[idn].xmom + cv[idn].ymom * cv[idn].ymom) /
-                cv[idn].dens;
+        CONS_VAR dummy;
+        dummy.dens = rhoa + (pb - pa) / (dv[ibn].cs * dv[ibn].cs);
+        dummy.xmom = dummy.dens * (ua + sxn * dprhoc);
+        dummy.ymom = dummy.dens * (va + syn * dprhoc);
+        dummy.ener = pb / gam1 +
+                     0.5 * (dummy.xmom * dummy.xmom + dummy.ymom * dummy.ymom) /
+                         dummy.dens;
+
+        auto dummyPrim = ConvertFromConv(dummy, dv[ibn].Cp, dv[ibn].gamma);
+        auto vari = ConvertFromConv(cv[ibn], dv[ibn].Cp, dv[ibn].gamma);
+        CONS_VAR dummyRhs;
+
+        numeric->ComputeResidual(param, sxn, syn, ds, vari, dummyPrim,
+                                 dv[ibn].gamma, dv[ibn].gamma, rhs[ibn],
+                                 dummyRhs);
+
+        auto dummyVisc = ConvertToVISC(dummy, dv[ibn].gamma, dv[ibn].Cp,
+                                       param.Prandtl, param.refVisc);
+        if (param.equationtype_ == preprocess::equationType::NavierStokes) {
+          ViscousNumericBound::ComputeResidual(
+              cv[ibn], dummy, dvlam[ibn], dummyVisc, gradx[ibn], grady[ibn],
+              gradTx[ibn], gradTy[ibn], geom.sij[ie].x, geom.sij[ie].y,
+              rhs[ibn]);
+        }
+
       } else {
         if (qn < 0.0) {
-          cv[idn].dens = param.RhoInfinity;
-          cv[idn].xmom = param.RhoInfinity * param.uInfinity;
-          cv[idn].ymom = param.RhoInfinity * param.vInfinity;
-          cv[idn].ener = param.PsInfinity / gam1 + 0.5 * param.RhoInfinity *
-                                                       param.velInfinity *
-                                                       param.velInfinity;
+          CONS_VAR dummy;
+
+          dummy.dens = param.RhoInfinity;
+          dummy.xmom = param.RhoInfinity * param.uInfinity;
+          dummy.ymom = param.RhoInfinity * param.vInfinity;
+          dummy.ener = param.PsInfinity / gam1 + 0.5 * param.RhoInfinity *
+                                                     param.velInfinity *
+                                                     param.velInfinity;
+          auto dummyPrim = ConvertFromConv(dummy, dv[ibn].Cp, dv[ibn].gamma);
+          auto vari = ConvertFromConv(cv[ibn], dv[ibn].Cp, dv[ibn].gamma);
+          CONS_VAR dummyRhs;
+          numeric->ComputeResidual(param, sxn, syn, ds, vari, dummyPrim,
+                                   dv[ibn].gamma, dv[ibn].gamma, rhs[ibn],
+                                   dummyRhs);
+
+          auto dummyVisc = ConvertToVISC(dummy, dv[ibn].gamma, dv[ibn].Cp,
+                                         param.Prandtl, param.refVisc);
+          if (param.equationtype_ == preprocess::equationType::NavierStokes) {
+            ViscousNumericBound::ComputeResidual(
+                cv[ibn], dummy, dvlam[ibn], dummyVisc, gradx[ibn], grady[ibn],
+                gradTx[ibn], gradTy[ibn], geom.sij[ie].x, geom.sij[ie].y,
+                rhs[ibn]);
+          }
         } else {
-          cv[idn].dens = cv[ibn].dens;
-          cv[idn].xmom = cv[ibn].xmom;
-          cv[idn].ymom = cv[ibn].ymom;
-          cv[idn].ener = cv[ibn].ener;
+          CONS_VAR dummy;
+          dummy.dens = cv[ibn].dens;
+          dummy.xmom = cv[ibn].xmom;
+          dummy.ymom = cv[ibn].ymom;
+          dummy.ener = cv[ibn].ener;
+          auto dummyPrim = ConvertFromConv(dummy, dv[ibn].Cp, dv[ibn].gamma);
+          auto vari = ConvertFromConv(cv[ibn], dv[ibn].Cp, dv[ibn].gamma);
+          CONS_VAR dummyRhs;
+          numeric->ComputeResidual(param, sxn, syn, ds, vari, dummyPrim,
+                                   dv[ibn].gamma, dv[ibn].gamma, rhs[ibn],
+                                   dummyRhs);
+
+          auto dummyVisc = ConvertToVISC(dummy, dv[ibn].gamma, dv[ibn].Cp,
+                                         param.Prandtl, param.refVisc);
+          if (param.equationtype_ == preprocess::equationType::NavierStokes) {
+            ViscousNumericBound::ComputeResidual(
+                cv[ibn], dummy, dvlam[ibn], dummyVisc, gradx[ibn], grady[ibn],
+                gradTx[ibn], gradTy[ibn], geom.sij[ie].x, geom.sij[ie].y,
+                rhs[ibn]);
+          }
         }
       }
-      ConvToDepend(idn);
     }
   } else {
     for (int ib = beg; ib <= end; ++ib) {
@@ -224,29 +299,75 @@ void FVMSolver::BoundFarfield(int beg, int end) {
           pb = farfield.press;
         }
         double dprhoc = sgn * (pa - pb) / crho0;
-        cv[idn].dens = rhoa + (pb - pa) / (dv[ibn].cs * dv[ibn].cs);
-        cv[idn].xmom = cv[idn].dens * (ua + sxn * dprhoc);
-        cv[idn].ymom = cv[idn].dens * (va + syn * dprhoc);
-        cv[idn].ener =
-            pb / gam1 +
-            0.5 * (cv[idn].xmom * cv[idn].xmom + cv[idn].ymom * cv[idn].ymom) /
-                cv[idn].dens;
+        CONS_VAR dummy;
+        dummy.dens = rhoa + (pb - pa) / (dv[ibn].cs * dv[ibn].cs);
+        dummy.xmom = dummy.dens * (ua + sxn * dprhoc);
+        dummy.ymom = dummy.dens * (va + syn * dprhoc);
+        dummy.ener = pb / gam1 +
+                     0.5 * (dummy.xmom * dummy.xmom + dummy.ymom * dummy.ymom) /
+                         dummy.dens;
+
+        auto dummyPrim = ConvertFromConv(dummy, dv[ibn].Cp, dv[ibn].gamma);
+        auto vari = ConvertFromConv(cv[ibn], dv[ibn].Cp, dv[ibn].gamma);
+        CONS_VAR dummyRhs;
+        numeric->ComputeResidual(param, sxn, syn, ds, vari, dummyPrim,
+                                 dv[ibn].gamma, dv[ibn].gamma, rhs[ibn],
+                                 dummyRhs);
+
+        auto dummyVisc = ConvertToVISC(dummy, dv[ibn].gamma, dv[ibn].Cp,
+                                       param.Prandtl, param.refVisc);
+        if (param.equationtype_ == preprocess::equationType::NavierStokes) {
+          ViscousNumericBound::ComputeResidual(
+              cv[ibn], dummy, dvlam[ibn], dummyVisc, gradx[ibn], grady[ibn],
+              gradTx[ibn], gradTy[ibn], geom.sij[ie].x, geom.sij[ie].y,
+              rhs[ibn]);
+        }
       } else {
         if (qn < 0.0) {
-          cv[idn].dens = param.RhoInfinity;
-          cv[idn].xmom = param.RhoInfinity * param.uInfinity;
-          cv[idn].ymom = param.RhoInfinity * param.vInfinity;
-          cv[idn].ener = param.PsInfinity / gam1 + 0.5 * param.RhoInfinity *
-                                                       param.velInfinity *
-                                                       param.velInfinity;
+          CONS_VAR dummy;
+          dummy.dens = param.RhoInfinity;
+          dummy.xmom = param.RhoInfinity * param.uInfinity;
+          dummy.ymom = param.RhoInfinity * param.vInfinity;
+          dummy.ener = param.PsInfinity / gam1 + 0.5 * param.RhoInfinity *
+                                                     param.velInfinity *
+                                                     param.velInfinity;
+          auto dummyPrim = ConvertFromConv(dummy, dv[ibn].Cp, dv[ibn].gamma);
+          auto vari = ConvertFromConv(cv[ibn], dv[ibn].Cp, dv[ibn].gamma);
+          CONS_VAR dummyRhs;
+          numeric->ComputeResidual(param, sxn, syn, ds, vari, dummyPrim,
+                                   dv[ibn].gamma, dv[ibn].gamma, rhs[ibn],
+                                   dummyRhs);
+          auto dummyVisc = ConvertToVISC(dummy, dv[ibn].gamma, dv[ibn].Cp,
+                                         param.Prandtl, param.refVisc);
+          if (param.equationtype_ == preprocess::equationType::NavierStokes) {
+            ViscousNumericBound::ComputeResidual(
+                cv[ibn], dummy, dvlam[ibn], dummyVisc, gradx[ibn], grady[ibn],
+                gradTx[ibn], gradTy[ibn], geom.sij[ie].x, geom.sij[ie].y,
+                rhs[ibn]);
+          }
         } else {
-          cv[idn].dens = cv[ibn].dens;
-          cv[idn].xmom = cv[ibn].xmom;
-          cv[idn].ymom = cv[ibn].ymom;
-          cv[idn].ener = cv[ibn].ener;
+          CONS_VAR dummy;
+          dummy.dens = cv[ibn].dens;
+          dummy.xmom = cv[ibn].xmom;
+          dummy.ymom = cv[ibn].ymom;
+          dummy.ener = cv[ibn].ener;
+          auto dummyPrim = ConvertFromConv(dummy, dv[ibn].Cp, dv[ibn].gamma);
+          auto vari = ConvertFromConv(cv[ibn], dv[ibn].Cp, dv[ibn].gamma);
+          CONS_VAR dummyRhs;
+          numeric->ComputeResidual(param, sxn, syn, ds, vari, dummyPrim,
+                                   dv[ibn].gamma, dv[ibn].gamma, rhs[ibn],
+                                   dummyRhs);
+
+          auto dummyVisc = ConvertToVISC(dummy, dv[ibn].gamma, dv[ibn].Cp,
+                                         param.Prandtl, param.refVisc);
+          if (param.equationtype_ == preprocess::equationType::NavierStokes) {
+            ViscousNumericBound::ComputeResidual(
+                cv[ibn], dummy, dvlam[ibn], dummyVisc, gradx[ibn], grady[ibn],
+                gradTx[ibn], gradTy[ibn], geom.sij[ie].x, geom.sij[ie].y,
+                rhs[ibn]);
+          }
         }
       }
-      ConvToDepend(idn);
     }
   }
 }
@@ -269,6 +390,7 @@ void FVMSolver::BoundOutflow(int beg, int end) {
     double q = std::sqrt(u * u + v * v);
     double mach = q / dv[ibn].cs;
 
+    CONS_VAR dummy;
     if (mach < 1.0) {
       double rrhoc = rrho / dv[ibn].cs;
       double deltp = dv[ibn].press - param.PsOutlet;
@@ -283,17 +405,43 @@ void FVMSolver::BoundOutflow(int beg, int end) {
         vb = (((v) < (0)) ? (-1.0) : (1.0)) *
              std::max(std::abs(vb), std::abs(v));
       }
-      cv[idn].dens = rhob;
-      cv[idn].xmom = rhob * ub;
-      cv[idn].ymom = rhob * vb;
-      cv[idn].ener = param.PsOutlet / gam1 + 0.5 * rhob * (ub * ub + vb * vb);
+      dummy.dens = rhob;
+      dummy.xmom = rhob * ub;
+      dummy.ymom = rhob * vb;
+      dummy.ener = param.PsOutlet / gam1 + 0.5 * rhob * (ub * ub + vb * vb);
     } else {
-      cv[idn].dens = cv[ibn].dens;
-      cv[idn].xmom = cv[ibn].xmom;
-      cv[idn].ymom = cv[ibn].ymom;
-      cv[idn].ener = cv[ibn].ener;
+      dummy.dens = cv[ibn].dens;
+      dummy.xmom = cv[ibn].xmom;
+      dummy.ymom = cv[ibn].ymom;
+      dummy.ener = cv[ibn].ener;
     }
-    ConvToDepend(idn);
+
+    auto dummyPrim = ConvertFromConv(dummy, dv[ibn].Cp, dv[ibn].gamma);
+    auto vari = ConvertFromConv(cv[ibn], dv[ibn].Cp, dv[ibn].gamma);
+    CONS_VAR dummyRhs;
+    numeric->ComputeResidual(param, sxn, syn, ds, vari, dummyPrim,
+                             dv[ibn].gamma, dv[ibn].gamma, rhs[ibn], dummyRhs);
+
+    auto dummyVisc = ConvertToVISC(dummy, dv[ibn].gamma, dv[ibn].Cp,
+                                   param.Prandtl, param.refVisc);
+    if (param.equationtype_ == preprocess::equationType::NavierStokes) {
+      ViscousNumericBound::ComputeResidual(
+          cv[ibn], dummy, dvlam[ibn], dummyVisc, gradx[ibn], grady[ibn],
+          gradTx[ibn], gradTy[ibn], geom.sij[ie].x, geom.sij[ie].y, rhs[ibn]);
+    }
+  }
+}
+
+void FVMSolver::WallVisc() {
+  int ibegn = 0;
+  for (int ib = 0; ib < geom.numBoundSegs; ++ib) {
+    int itype = geom.BoundTypes[ib];
+    int iendn = geom.ibound[ib].bnodeIndex;
+    if (param.equationtype_ == preprocess::equationType::NavierStokes &&
+        (itype >= 300 && itype < 400)) {
+      BoundWallVisc(ibegn, iendn);
+    }
+    ibegn = iendn + 1;
   }
 }
 

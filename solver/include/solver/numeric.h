@@ -7,7 +7,7 @@
 #include <vector>
 namespace solver {
 class BaseNumeric {
-public:
+ public:
   BaseNumeric(const preprocess::parameter &param,
               const preprocess::Geometry &geom, std::vector<CONS_VAR> &cv,
               std::vector<DEPEND_VAR> &dv, std::vector<CONS_VAR> &diss,
@@ -20,11 +20,16 @@ public:
 
   interfaceVar Interpolate(const int &i, const int &j);
 
-  virtual void DissipNumeric(const double &beta){};
+  virtual void DissipNumeric(const double &beta) {};
 
-  virtual void FluxNumeric(){};
+  virtual void FluxNumeric() {};
 
-protected:
+  virtual void ComputeResidual(const preprocess::parameter &param, double nx,
+                               double ny, double ds, PRIM_VAR vari,
+                               PRIM_VAR varj, double gammai, double gammaj,
+                               CONS_VAR &resi, CONS_VAR &resj) {};
+
+ protected:
   const preprocess::parameter &param;
   const preprocess::Geometry &geom;
   std::vector<CONS_VAR> &cv;
@@ -39,7 +44,7 @@ protected:
 };
 
 class NumericRoe : public BaseNumeric {
-public:
+ public:
   using BaseNumeric::BaseNumeric;
 
   void DissipNumeric(const double &beta) override;
@@ -47,41 +52,38 @@ public:
   void FluxNumeric() override;
 
   double EntropyCorr(const double &z, const double &d);
+  void ComputeResidual(const preprocess::parameter &param, double nx, double ny,
+                       double ds, PRIM_VAR vari, PRIM_VAR varj, double gammai,
+                       double gammaj, CONS_VAR &resi, CONS_VAR &resj) override;
 };
 
 class NumericSLAU2 : public BaseNumeric {
-public:
+ public:
   using BaseNumeric::BaseNumeric;
   void DissipNumeric(const double &beta) override;
   void FluxNumeric() override;
-
-  inline double pressureFuncLeft(const double &m) {
-    if (std::abs(m) >= 1.0) {
-      return 0.5 * (1 + (m >= 0 ? 1 : -1));
-    } else {
-      return 0.25 * (m + 1) * (m + 1) * (2 - m);
-    }
-  }
-  inline double pressureFuncRight(const double &m) {
-    if (std::abs(m) >= 1.0) {
-      return 0.5 * (1 - (m >= 0 ? 1 : -1));
-    } else {
-      return 0.25 * (m - 1) * (m - 1) * (2 + m);
-    }
-  }
+  void ComputeResidual(const preprocess::parameter &param, double nx, double ny,
+                       double ds, PRIM_VAR vari, PRIM_VAR varj, double gammai,
+                       double gammaj, CONS_VAR &resi, CONS_VAR &resj) override;
 };
 
 class NumericAUSM : public BaseNumeric {
-public:
+ public:
   using BaseNumeric::BaseNumeric;
   void DissipNumeric(const double &beta) override;
   void FluxNumeric() override;
+  void ComputeResidual(const preprocess::parameter &param, double nx, double ny,
+                       double ds, PRIM_VAR vari, PRIM_VAR varj, double gammai,
+                       double gammaj, CONS_VAR &resi, CONS_VAR &resj) override;
 };
 
 class NumericAUSMUP2 : public BaseNumeric {
-public:
+ public:
   using BaseNumeric::BaseNumeric;
   void DissipNumeric(const double &beta) override;
   void FluxNumeric() override;
+  void ComputeResidual(const preprocess::parameter &param, double nx, double ny,
+                       double ds, PRIM_VAR vari, PRIM_VAR varj, double gammai,
+                       double gammaj, CONS_VAR &resi, CONS_VAR &resj) override;
 };
-} // namespace solver
+}  // namespace solver
