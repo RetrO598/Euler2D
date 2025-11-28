@@ -3,6 +3,8 @@
 #include <cmath>
 #include <iostream>
 
+#include "pre/parameter.h"
+
 namespace solver {
 void FVMSolver::DensityChange(double &drho, double &drmax, int &idrmax) {
   int i;
@@ -44,20 +46,15 @@ void FVMSolver::Convergence() {
     MassFlow();
   }
   if (param.flowtype_ == preprocess::flowType::External) {
-    std::cout << "iter: " << iter << " "
-              << "drho: " << std::log10(drho) << " "
-              << "drmax: " << drmax << " "
-              << "idr: " << idr << " "
-              << "cl: " << cl << " "
-              << "cd: " << cd << " "
-              << "cm: " << cm << "\n";
+    std::cout << "iter: " << iter << " " << "drho: " << std::log10(drho) << " "
+              << "drmax: " << drmax << " " << "idr: " << idr << " "
+              << "cl: " << cl << " " << "cd: " << cd << " " << "cm: " << cm
+              << "\n";
   } else {
-    std::cout << "iter: " << iter << " "
-              << "drho: " << std::log10(drho) << " "
-              << "drmax: " << drmax << " "
-              << "idr: " << idr << " "
-              << "Mass Flow: " << mflow << " "
-              << "Mass Flow Ratio: " << mfratio << "\n";
+    std::cout << "iter: " << iter << " " << "drho: " << std::log10(drho) << " "
+              << "drmax: " << drmax << " " << "idr: " << idr << " "
+              << "Mass Flow: " << mflow << " " << "Mass Flow Ratio: " << mfratio
+              << "\n";
   }
 }
 
@@ -68,7 +65,10 @@ void FVMSolver::Forces() {
   int ibegf = 0.0;
   for (int ib = 0; ib < geom.numBoundSegs; ++ib) {
     int iendf = geom.ibound[ib].bfaceIndex;
-    if (geom.BoundTypes[ib] >= 300 && geom.BoundTypes[ib] < 500) {
+    auto name = geom.bname[ib];
+    auto type = param.boundaryMap.find(name)->second;
+    if ((type == preprocess::BoundaryType::EulerWall) ||
+        (type == preprocess::BoundaryType::NoSlipWall)) {
       for (int ibf = ibegf; ibf <= iendf; ++ibf) {
         int n1 = geom.boundaryFace[ibf].nodei;
         int n2 = geom.boundaryFace[ibf].nodej;
@@ -109,7 +109,10 @@ void FVMSolver::MassFlow() {
   int ibegf = 0.0;
   for (int ib = 0; ib < geom.numBoundSegs; ++ib) {
     int iendf = geom.ibound[ib].bfaceIndex;
-    if (geom.BoundTypes[ib] >= 100 && geom.BoundTypes[ib] < 300) {
+    auto name = geom.bname[ib];
+    auto type = param.boundaryMap.find(name)->second;
+    if (type == preprocess::BoundaryType::Inflow ||
+        type == preprocess::BoundaryType::Outflow) {
       for (int ibf = ibegf; ibf <= iendf; ++ibf) {
         int n1 = geom.boundaryFace[ibf].nodei;
         int n2 = geom.boundaryFace[ibf].nodej;
@@ -117,7 +120,7 @@ void FVMSolver::MassFlow() {
         double sy = geom.sbf[ibf].y;
         mass = 0.5 * ((cv[n1].xmom + cv[n2].xmom) * sx +
                       (cv[n1].ymom + cv[n2].ymom) * sy);
-        if (geom.BoundTypes[ib] >= 100 && geom.BoundTypes[ib] < 200) {
+        if (type == preprocess::BoundaryType::Inflow) {
           massin = massin - mass;
           in = true;
         } else {
@@ -138,4 +141,4 @@ void FVMSolver::MassFlow() {
     mfratio = 1.0;
   }
 }
-} // namespace solver
+}  // namespace solver

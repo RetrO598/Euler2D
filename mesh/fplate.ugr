@@ -4,15 +4,15 @@
    10465   20480       5
 # boundaries: type, last face, last node, name:
      500      32      33
-symmetry                                                                        
+symmetry                                                                       
      300     160     162
-wall                                                                            
+wall                                                                        
      600     224     227
-farfield                                                                        
+farfield1                                                                        
      600     384     388
-farfield                                                                        
+farfield2                                                                        
      600     448     453
-farfield                                                                        
+farfield3                                                                        
 # boundary faces / periodic nodes (node1, node2):
        1       2
        2       3

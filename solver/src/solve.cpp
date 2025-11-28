@@ -29,8 +29,6 @@ void FVMSolver::solve() {
       }
       limiter->limiterInit();
       limiter->limiterUpdate();
-
-      // numeric->DissipNumeric(param.dissipationBlend[irk]);
     }
 
     numeric->FluxNumeric();

@@ -5,7 +5,7 @@
 # boundaries: type, last face, last node, name:
 600 60 60
 Farfield
-400 218 218
+300 218 218
 Airfoil
 # boundary faces / periodic nodes (node1, node2):
 1 2

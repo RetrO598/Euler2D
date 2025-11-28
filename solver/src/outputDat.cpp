@@ -2,6 +2,8 @@
 
 #include <cmath>
 
+#include "pre/parameter.h"
+
 namespace solver {
 void FVMSolver::writeTecplotDat() {
   std::ofstream outFile(param.title + ".dat");
@@ -34,7 +36,10 @@ void FVMSolver::writeLineDat() {
   int number = 0;
   for (int i = 0; i < geom.numBoundSegs; ++i) {
     int itype = geom.BoundTypes[i];
-    if (itype >= 300 && itype < 500) {
+    auto name = geom.bname[i];
+    auto type = param.boundaryMap.find(name)->second;
+    if (type == preprocess::BoundaryType::EulerWall ||
+        type == preprocess::BoundaryType::NoSlipWall) {
       nodes += geom.ibound[i].bnodeIndex + 1;
       nodes -= number;
     }
@@ -46,7 +51,10 @@ void FVMSolver::writeLineDat() {
   for (int i = 0; i < geom.numBoundSegs; ++i) {
     int itype = geom.BoundTypes[i];
     iend = geom.ibound[i].bnodeIndex;
-    if (itype >= 300 && itype < 500) {
+    auto name = geom.bname[i];
+    auto type = param.boundaryMap.find(name)->second;
+    if (type == preprocess::BoundaryType::EulerWall ||
+        type == preprocess::BoundaryType::NoSlipWall) {
       for (int in = ibeg; in <= iend; ++in) {
         outFile << geom.coords[in].x << " " << geom.coords[in].y << " "
                 << cv[in].dens << " " << cv[in].xmom / cv[in].dens << " "
@@ -60,4 +68,4 @@ void FVMSolver::writeLineDat() {
   outFile << "\n";
   outFile.close();
 }
-} // namespace solver
+}  // namespace solver

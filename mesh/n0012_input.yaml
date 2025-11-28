@@ -33,13 +33,22 @@ physics:
     flow_angle_outlet: 0.0
     pressure_ratio_inlet_outlet: 1.0
 
+boundary_condition:
+  Inflow: []
+  Outflow: []
+  Farfield: ["Farfield"]
+  EulerWall: ["Airfoil"]
+  NoSlipWall: []
+  Periodic: []
+  Symmetric: [] 
+
 geometry_reference:
   x_ref: 0.25                    # Moment coefficient reference [m]
   y_ref: 0.0
   chord_length: 1.0              # Reference length [m]
 
 iteration_control:
-  max_iterations: 2000
+  max_iterations: 5000
   dump_frequency: 99999
   tolerance: 1.0e-5
   restart: "N"                   # Use previous solution for restart (Y/N)

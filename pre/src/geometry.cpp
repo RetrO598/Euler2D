@@ -38,6 +38,8 @@ void Geometry::ReadGrid() {
     ibound[ib].bfaceIndex--;
     ibound[ib].bnodeIndex--;
     bname[ib] = gridReader.readLineFiltered();
+    auto pos = bname[ib].find_first_of(" \t\r\n\0");
+    if (pos != std::string::npos) bname[ib].resize(pos);
   }
 
   numBoundFaces = ibound[numBoundSegs - 1].bfaceIndex + 1;
@@ -146,11 +148,6 @@ void Geometry::DummyNodes() {
           }
           boundaryNode[ibegn].node = i;
           vertexList[ibegn].nodeIdx = i;
-          // if (flag) {
-          //   boundaryNode[ibegn].dummy = phyNodes + idn;
-          //   boundaryNode[ibegn].indexEdge = -1;
-          //   idn++;
-          // }
           ibegn++;
         }
       }
@@ -244,15 +241,6 @@ void Geometry::GenerateEdgeList() {
   if (ie != phyEdges) {
     throw std::runtime_error("did not get correct number of interior edges.");
   }
-
-  // for (ibn = 0; ibn < numBoundNodes; ++ibn) {
-  //   if (boundaryNode[ibn].indexEdge == -1) {
-  //     edge[ie].nodei = boundaryNode[ibn].node;
-  //     edge[ie].nodej = boundaryNode[ibn].dummy;
-  //     boundaryNode[ibn].indexEdge = ie;
-  //     ie++;
-  //   }
-  // }
 
   if (ie != phyEdges) {
     throw std::runtime_error("did not get the coorect number of dummy edges.");
@@ -473,15 +461,11 @@ void Geometry::FaceVectorsVolumesBound() {
           if (boundaryNode[ibn].node == n1) {
             ie = boundaryNode[ibn].indexEdge;
             n1 = -777;
-            // sij[ie].x += 0.5 * sbf[ibf].x;
-            // sij[ie].y += 0.5 * sbf[ibf].y;
             vertexList[ibn].normal[0] += 0.5 * sbf[ibf].x;
             vertexList[ibn].normal[1] += 0.5 * sbf[ibf].y;
           } else if (boundaryNode[ibn].node == n2) {
             ie = boundaryNode[ibn].indexEdge;
             n2 = -777;
-            // sij[ie].x += 0.5 * sbf[ibf].x;
-            // sij[ie].y += 0.5 * sbf[ibf].y;
             vertexList[ibn].normal[0] += 0.5 * sbf[ibf].x;
             vertexList[ibn].normal[1] += 0.5 * sbf[ibf].y;
           }
@@ -495,14 +479,6 @@ void Geometry::FaceVectorsVolumesBound() {
     ibegf = iendf + 1;
     ibegn = iendn + 1;
   }
-
-  // for (ie = phyEdges; ie < totEdges; ++ie) {
-  //   i = edge[ie].nodei;
-  //   j = edge[ie].nodej;
-  //   coords[j].x = coords[i].x;
-  //   coords[j].y = coords[i].y;
-  //   vol[j] = vol[i];
-  // }
 }
 
 void Geometry::CheckMetrics() {

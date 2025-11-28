@@ -3,7 +3,7 @@
 # no. of nodes, cells, boundaries:
 5503 10371 9
 # boundaries: type, last face, last node, name:
-400 195 195
+300 195 195
 Blade
 700 195 226
 Periodic_1

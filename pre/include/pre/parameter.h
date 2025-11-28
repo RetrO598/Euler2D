@@ -1,9 +1,20 @@
 #pragma once
 #include <cstddef>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace preprocess {
+
+enum class BoundaryType {
+  Inflow,
+  Outflow,
+  Farfield,
+  EulerWall,
+  NoSlipWall,
+  Periodic,
+  Symmetric
+};
 
 enum class flowType { Internal, External };
 
@@ -47,6 +58,9 @@ struct parameter {
 
   // Physics parameters for internal flow
   double PtInlet, TtInlet, flowAngIn, PsOutlet, approxFlowAngOut, PsRatio;
+
+  // Boundary Conditions
+  std::unordered_map<std::string, BoundaryType> boundaryMap;
 
   // Geometrical reference values
   double xRefPoint, yRefPoint, chord;

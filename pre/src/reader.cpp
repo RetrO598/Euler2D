@@ -8,6 +8,7 @@
 #include <iostream>
 #include <regex>
 #include <string>
+#include <vector>
 namespace preprocess {
 
 template <typename T>
@@ -220,7 +221,6 @@ std::string_view simpleReader::getFilePath() const { return filePath; }
 
 void yamlReader::read(parameter& param) {
   YAML::Node config = YAML::LoadFile(filename);
-
   auto get = [&](const std::string& key) -> YAML::Node { return config[key]; };
 
   // 文件与输出
@@ -269,6 +269,67 @@ void yamlReader::read(parameter& param) {
       get("physics")["internal_flow"]["flow_angle_outlet"].as<double>();
   param.PsRatio = get("physics")["internal_flow"]["pressure_ratio_inlet_outlet"]
                       .as<double>();
+
+  auto inflow =
+      get("boundary_condition")["Inflow"].as<std::vector<std::string>>();
+  if (!inflow.empty()) {
+    for (auto i : inflow) {
+      param.boundaryMap.insert({i, BoundaryType::Inflow});
+    }
+  }
+
+  auto outflow =
+      get("boundary_condition")["Outflow"].as<std::vector<std::string>>();
+  if (!outflow.empty()) {
+    for (auto i : outflow) {
+      param.boundaryMap.insert({i, BoundaryType::Outflow});
+    }
+  }
+
+  auto farfield =
+      get("boundary_condition")["Farfield"].as<std::vector<std::string>>();
+  if (!farfield.empty()) {
+    for (auto i : farfield) {
+      param.boundaryMap.insert({i, BoundaryType::Farfield});
+    }
+  }
+
+  auto eulerWall =
+      get("boundary_condition")["EulerWall"].as<std::vector<std::string>>();
+  if (!eulerWall.empty()) {
+    for (auto i : eulerWall) {
+      param.boundaryMap.insert({i, BoundaryType::EulerWall});
+    }
+  }
+
+  auto noslipWall =
+      get("boundary_condition")["NoSlipWall"].as<std::vector<std::string>>();
+  if (!noslipWall.empty()) {
+    for (auto i : noslipWall) {
+      param.boundaryMap.insert({i, BoundaryType::NoSlipWall});
+    }
+  }
+
+  auto periodic =
+      get("boundary_condition")["Periodic"].as<std::vector<std::string>>();
+  if (!periodic.empty()) {
+    for (auto i : periodic) {
+      param.boundaryMap.insert({i, BoundaryType::Periodic});
+    }
+  }
+
+  auto symmetry =
+      get("boundary_condition")["Symmetric"].as<std::vector<std::string>>();
+  if (!symmetry.empty()) {
+    for (auto i : symmetry) {
+      param.boundaryMap.insert({i, BoundaryType::Symmetric});
+    }
+  }
+
+  for (auto i : param.boundaryMap) {
+    std::cout << "Boundary: " << i.first << " with type: " << int(i.second)
+              << "\n";
+  }
 
   // 几何参数
   param.xRefPoint = get("geometry_reference")["x_ref"].as<double>();

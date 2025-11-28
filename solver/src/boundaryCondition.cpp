@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <solver/numericTemplate.hpp>
+#include <string>
 #include <vector>
 
 #include "pre/parameter.h"
@@ -20,25 +21,28 @@ namespace solver {
 void FVMSolver::BoundaryConditions() {
   int ibegn = 0;
   for (int ib = 0; ib < geom.numBoundSegs; ++ib) {
+    auto name = geom.bname[ib];
+    auto type = param.boundaryMap.find(name)->second;
     int itype = geom.BoundTypes[ib];
     int iendn = geom.ibound[ib].bnodeIndex;
 
-    if (itype >= 100 && itype < 200) {
+    if (type == preprocess::BoundaryType::Inflow) {
       BoundInflow(ibegn, iendn);
-    } else if (itype >= 200 && itype < 300) {
+    } else if (type == preprocess::BoundaryType::Outflow) {
       BoundOutflow(ibegn, iendn);
-    } else if (itype >= 600 && itype < 700) {
+    } else if (type == preprocess::BoundaryType::Farfield) {
       BoundFarfield(ibegn, iendn);
     }
     ibegn = iendn + 1;
   }
-
   ibegn = 0;
   for (int ib = 0; ib < geom.numBoundSegs; ++ib) {
+    auto name = geom.bname[ib];
+    auto type = param.boundaryMap.find(name)->second;
     int itype = geom.BoundTypes[ib];
     int iendn = geom.ibound[ib].bnodeIndex;
     if (param.equationtype_ == preprocess::equationType::NavierStokes &&
-        (itype >= 300 && itype < 400)) {
+        (type == preprocess::BoundaryType::NoSlipWall)) {
       BoundWallVisc(ibegn, iendn);
     }
     ibegn = iendn + 1;
@@ -443,8 +447,10 @@ void FVMSolver::WallVisc() {
   for (int ib = 0; ib < geom.numBoundSegs; ++ib) {
     int itype = geom.BoundTypes[ib];
     int iendn = geom.ibound[ib].bnodeIndex;
+    auto name = geom.bname[ib];
+    auto type = param.boundaryMap.find(name)->second;
     if (param.equationtype_ == preprocess::equationType::NavierStokes &&
-        (itype >= 300 && itype < 400)) {
+        (type == preprocess::BoundaryType::NoSlipWall)) {
       BoundWallVisc(ibegn, iendn);
     }
     ibegn = iendn + 1;
@@ -466,7 +472,9 @@ void FVMSolver::PeriodicPrim(std::vector<PRIM_VAR> &var) {
   int ibegn = 0;
   for (int ib = 0; ib < geom.numBoundSegs; ++ib) {
     int iendn = geom.ibound[ib].bnodeIndex;
-    if (geom.BoundTypes[ib] >= 700 && geom.BoundTypes[ib] < 800) {
+    auto name = geom.bname[ib];
+    auto type = param.boundaryMap.find(name)->second;
+    if (type == preprocess::BoundaryType::Periodic) {
       for (int ibn = ibegn; ibn <= iendn; ++ibn) {
         int i = geom.boundaryNode[ibn].node;
         int j = geom.boundaryNode[ibn].dummy;
@@ -489,7 +497,9 @@ void FVMSolver::PeriodicCons(std::vector<CONS_VAR> &var) {
   int ibegn = 0.0;
   for (int ib = 0; ib < geom.numBoundSegs; ++ib) {
     int iendn = geom.ibound[ib].bnodeIndex;
-    if (geom.BoundTypes[ib] >= 700 && geom.BoundTypes[ib] < 800) {
+    auto name = geom.bname[ib];
+    auto type = param.boundaryMap.find(name)->second;
+    if (type == preprocess::BoundaryType::Periodic) {
       for (int ibn = ibegn; ibn <= iendn; ++ibn) {
         int i = geom.boundaryNode[ibn].node;
         int j = geom.boundaryNode[ibn].dummy;
@@ -514,7 +524,9 @@ void FVMSolver::PeriodicInt(std::vector<int> &var) {
 
   for (ib = 0; ib < geom.numBoundSegs; ib++) {
     iendn = geom.ibound[ib].bnodeIndex;
-    if (geom.BoundTypes[ib] >= 700 && geom.BoundTypes[ib] < 800) {
+    auto name = geom.bname[ib];
+    auto type = param.boundaryMap.find(name)->second;
+    if (type == preprocess::BoundaryType::Periodic) {
       for (ibn = ibegn; ibn <= iendn; ibn++) {
         i = geom.boundaryNode[ibn].node;
         j = geom.boundaryNode[ibn].dummy;
@@ -530,8 +542,10 @@ void FVMSolver::PeriodicVisc(std::vector<double> &gradTx,
                              std::vector<double> &gradTy) {
   int ibegn = 0;
   for (int ib = 0; ib < geom.numBoundSegs; ++ib) {
+    auto name = geom.bname[ib];
+    auto type = param.boundaryMap.find(name)->second;
     int iendn = geom.ibound[ib].bnodeIndex;
-    if (geom.BoundTypes[ib] >= 700 && geom.BoundTypes[ib] < 800) {
+    if (type == preprocess::BoundaryType::Periodic) {
       for (int ibn = ibegn; ibn <= iendn; ++ibn) {
         int i = geom.boundaryNode[ibn].node;
         int j = geom.boundaryNode[ibn].dummy;

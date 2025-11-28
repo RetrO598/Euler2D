@@ -2,12 +2,16 @@
 
 #include <cmath>
 
+#include "pre/parameter.h"
+
 namespace solver {
 void FVMSolver::ZeroRes() {
   int ibegn = 0;
   for (int ib = 0; ib < geom.numBoundSegs; ++ib) {
     int iendn = geom.ibound[ib].bnodeIndex;
-    if (geom.BoundTypes[ib] >= 500 && geom.BoundTypes[ib] < 600) {
+    auto name = geom.bname[ib];
+    auto type = param.boundaryMap.find(name)->second;
+    if (type == preprocess::BoundaryType::Symmetric) {
       if (geom.BoundTypes[ib] - 500 < 2) {
         for (int ibn = ibegn; ibn <= iendn; ++ibn) {
           int i = geom.boundaryNode[ibn].node;
@@ -19,7 +23,7 @@ void FVMSolver::ZeroRes() {
           rhs[i].ymom = 0.0;
         }
       }
-    } else if ((geom.BoundTypes[ib] >= 300 && geom.BoundTypes[ib] < 400) &&
+    } else if ((type == preprocess::BoundaryType::NoSlipWall) &&
                param.equationtype_ == preprocess::equationType::NavierStokes) {
       for (int ibn = ibegn; ibn <= iendn; ++ibn) {
         int i = geom.boundaryNode[ib].node;

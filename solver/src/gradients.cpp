@@ -2,6 +2,8 @@
 
 #include <cmath>
 
+#include "pre/parameter.h"
+
 namespace solver {
 void FVMSolver::Gradients() {
   double fcx[4];
@@ -60,11 +62,13 @@ void FVMSolver::Gradients() {
   int ibegf = 0;
   for (int ib = 0; ib < geom.numBoundSegs; ++ib) {
     int iendf = geom.ibound[ib].bfaceIndex;
+    auto name = geom.bname[ib];
+    auto type = param.boundaryMap.find(name)->second;
     bool flag = true;
-    if (geom.BoundTypes[ib] >= 500 && geom.BoundTypes[ib] < 600) {
+    if (type == preprocess::BoundaryType::Symmetric) {
       flag = false;
     }
-    if (geom.BoundTypes[ib] >= 700 && geom.BoundTypes[ib] < 800) {
+    if (type == preprocess::BoundaryType::Periodic) {
       flag = false;
     }
 
@@ -112,7 +116,9 @@ void FVMSolver::Gradients() {
   int ibegn = 0;
   for (int ib = 0; ib < geom.numBoundSegs; ++ib) {
     int iendn = geom.ibound[ib].bnodeIndex;
-    if (geom.BoundTypes[ib] >= 500 && geom.BoundTypes[ib] < 600) {
+    auto name = geom.bname[ib];
+    auto type = param.boundaryMap.find(name)->second;
+    if (type == preprocess::BoundaryType::Symmetric) {
       if ((geom.BoundTypes[ib] - 500) < 2) {
         for (int ibn = ibegn; ibn <= iendn; ++ibn) {
           int i = geom.boundaryNode[ibn].node;
@@ -217,10 +223,12 @@ void FVMSolver::GradientsVisc() {
   for (int ib = 0; ib < geom.numBoundSegs; ++ib) {
     int iendf = geom.ibound[ib].bfaceIndex;
     bool flag = true;
-    if (geom.BoundTypes[ib] >= 500 && geom.BoundTypes[ib] < 600) {
+    auto name = geom.bname[ib];
+    auto type = param.boundaryMap.find(name)->second;
+    if (type == preprocess::BoundaryType::Symmetric) {
       flag = false;
     }
-    if (geom.BoundTypes[ib] >= 700 && geom.BoundTypes[ib] < 800) {
+    if (type == preprocess::BoundaryType::Periodic) {
       flag = false;
     }
 
@@ -274,7 +282,9 @@ void FVMSolver::GradientsVisc() {
   int ibegn = 0;
   for (int ib = 0; ib < geom.numBoundSegs; ++ib) {
     int iendn = geom.ibound[ib].bnodeIndex;
-    if (geom.BoundTypes[ib] >= 500 && geom.BoundTypes[ib] < 600) {
+    auto name = geom.bname[ib];
+    auto type = param.boundaryMap.find(name)->second;
+    if (type == preprocess::BoundaryType::Symmetric) {
       if ((geom.BoundTypes[ib] - 500) < 2) {
         for (int ibn = ibegn; ibn <= iendn; ++ibn) {
           int i = geom.boundaryNode[ibn].node;

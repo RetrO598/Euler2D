@@ -20,8 +20,6 @@ class BaseNumeric {
 
   interfaceVar Interpolate(const int &i, const int &j);
 
-  // virtual void DissipNumeric(const double &beta) {};
-
   virtual void FluxNumeric() {};
 
   virtual void ComputeResidual(const preprocess::parameter &param, double nx,
@@ -47,11 +45,8 @@ class NumericRoe : public BaseNumeric {
  public:
   using BaseNumeric::BaseNumeric;
 
-  // void DissipNumeric(const double &beta) override;
-
   void FluxNumeric() override;
 
-  // double EntropyCorr(const double &z, const double &d);
   void ComputeResidual(const preprocess::parameter &param, double nx, double ny,
                        double ds, PRIM_VAR vari, PRIM_VAR varj, double gammai,
                        double gammaj, CONS_VAR &resi, CONS_VAR &resj) override;
@@ -60,7 +55,6 @@ class NumericRoe : public BaseNumeric {
 class NumericSLAU2 : public BaseNumeric {
  public:
   using BaseNumeric::BaseNumeric;
-  // void DissipNumeric(const double &beta) override;
   void FluxNumeric() override;
   void ComputeResidual(const preprocess::parameter &param, double nx, double ny,
                        double ds, PRIM_VAR vari, PRIM_VAR varj, double gammai,
@@ -70,7 +64,6 @@ class NumericSLAU2 : public BaseNumeric {
 class NumericAUSM : public BaseNumeric {
  public:
   using BaseNumeric::BaseNumeric;
-  // void DissipNumeric(const double &beta) override;
   void FluxNumeric() override;
   void ComputeResidual(const preprocess::parameter &param, double nx, double ny,
                        double ds, PRIM_VAR vari, PRIM_VAR varj, double gammai,
@@ -80,7 +73,6 @@ class NumericAUSM : public BaseNumeric {
 class NumericAUSMUP2 : public BaseNumeric {
  public:
   using BaseNumeric::BaseNumeric;
-  // void DissipNumeric(const double &beta) override;
   void FluxNumeric() override;
   void ComputeResidual(const preprocess::parameter &param, double nx, double ny,
                        double ds, PRIM_VAR vari, PRIM_VAR varj, double gammai,

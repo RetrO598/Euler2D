@@ -47,7 +47,10 @@ void BaseNumeric::FluxWalls() {
   int ibegf = 0;
   for (int ib = 0; ib < geom.numBoundSegs; ++ib) {
     int iendf = geom.ibound[ib].bfaceIndex;
-    if (geom.BoundTypes[ib] >= 300 && geom.BoundTypes[ib] < 500) {
+    auto name = geom.bname[ib];
+    auto type = param.boundaryMap.find(name)->second;
+    if (type == preprocess::BoundaryType::EulerWall ||
+        type == preprocess::BoundaryType::NoSlipWall) {
       for (int ibf = ibegf; ibf <= iendf; ++ibf) {
         int i = geom.boundaryFace[ibf].nodei;
         int j = geom.boundaryFace[ibf].nodej;

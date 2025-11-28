@@ -33,6 +33,15 @@ physics:
     flow_angle_outlet: -67.0
     pressure_ratio_inlet_outlet: 1.85
 
+boundary_condition:
+  Inflow: ["Inflow"]
+  Outflow: ["Outflow"]
+  Farfield: []
+  EulerWall: ["Blade"]
+  NoSlipWall: []
+  Periodic: ["Periodic_1", "Periodic_3", "Periodic_2", "Periodic_4", "Periodic_5", "Periodic_6"]
+  Symmetric: [] 
+
 geometry_reference:
   x_ref: 0.25                    # Moment coefficient reference [m]
   y_ref: 0.0

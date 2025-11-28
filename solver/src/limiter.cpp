@@ -109,7 +109,9 @@ void BaseLimiter::limiterInit() {
   int ibegn = 0;
   for (int ib = 0; ib < geom.numBoundSegs; ++ib) {
     int iendn = geom.ibound[ib].bnodeIndex;
-    if (geom.BoundTypes[ib] >= 700 && geom.BoundTypes[ib] < 800) {
+    auto name = geom.bname[ib];
+    auto type = param.boundaryMap.find(name)->second;
+    if (type == preprocess::BoundaryType::Periodic) {
       for (int ibn = ibegn; ibn <= iendn; ++ibn) {
         int i = geom.boundaryNode[ibn].node;
         int j = geom.boundaryNode[ibn].dummy;
@@ -230,7 +232,9 @@ void VenkatakrishnanLimiter::limiterUpdate() {
 
   for (int ib = 0; ib < geom.numBoundSegs; ++ib) {
     int iendn = geom.ibound[ib].bnodeIndex;
-    if (geom.BoundTypes[ib] >= 700 && geom.BoundTypes[ib] < 800) {
+    auto name = geom.bname[ib];
+    auto type = param.boundaryMap.find(name)->second;
+    if (type == preprocess::BoundaryType::Periodic) {
       for (int ibn = ibegn; ibn <= iendn; ++ibn) {
         int i = geom.boundaryNode[ibn].node;
         int j = geom.boundaryNode[ibn].dummy;
@@ -373,7 +377,9 @@ void NishikawaR3::limiterUpdate() {
 
   for (int ib = 0; ib < geom.numBoundSegs; ++ib) {
     int iendn = geom.ibound[ib].bnodeIndex;
-    if (geom.BoundTypes[ib] >= 700 && geom.BoundTypes[ib] < 800) {
+    auto name = geom.bname[ib];
+    auto type = param.boundaryMap.find(name)->second;
+    if (type == preprocess::BoundaryType::Periodic) {
       for (int ibn = ibegn; ibn <= iendn; ++ibn) {
         int i = geom.boundaryNode[ibn].node;
         int j = geom.boundaryNode[ibn].dummy;
