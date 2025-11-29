@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
 
   // reader.close();
 
-  preprocess::Geometry geometry(param.gridFile);
+  preprocess::Geometry geometry(param);
 
   geometry.ReadGrid();
   geometry.printInfo();

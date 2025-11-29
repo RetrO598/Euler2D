@@ -3,14 +3,17 @@
 #include <pre/reader.h>
 
 #include <string>
+#include <unordered_map>
 #include <vector>
+
+#include "pre/parameter.h"
 namespace preprocess {
 
 class Geometry {
  public:
   int phyNodes, phyEdges, numTria, numBoundSegs, numBoundFaces, numBoundNodes;
 
-  std::vector<int> BoundTypes;
+  // std::vector<int> BoundTypes;
   std::vector<Tria> tria;
   std::vector<Edge> edge;
   std::vector<BoundaryFace> boundaryFace;
@@ -23,8 +26,9 @@ class Geometry {
   std::vector<Node> sproj;
   std::vector<std::string> bname;
   std::vector<vertex> vertexList;
+  std::unordered_map<std::string, preprocess::BoundaryType> boundaryMap;
 
-  Geometry(const std::string &filename, const std::string &commentChar = "#");
+  Geometry(const parameter &param, const std::string &commentChar = "#");
   Geometry(const Geometry &geomtry) = delete;
   Geometry(Geometry &&geometry) = delete;
   Geometry &operator=(const Geometry &geomtry) = delete;

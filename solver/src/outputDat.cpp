@@ -35,7 +35,6 @@ void FVMSolver::writeLineDat() {
   int nodes = 0;
   int number = 0;
   for (int i = 0; i < geom.numBoundSegs; ++i) {
-    int itype = geom.BoundTypes[i];
     auto name = geom.bname[i];
     auto type = param.boundaryMap.find(name)->second;
     if (type == preprocess::BoundaryType::EulerWall ||
@@ -49,7 +48,6 @@ void FVMSolver::writeLineDat() {
   int ibeg = 0;
   int iend = 0;
   for (int i = 0; i < geom.numBoundSegs; ++i) {
-    int itype = geom.BoundTypes[i];
     iend = geom.ibound[i].bnodeIndex;
     auto name = geom.bname[i];
     auto type = param.boundaryMap.find(name)->second;

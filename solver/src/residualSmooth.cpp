@@ -1,18 +1,27 @@
 #include <solver/FVMSolver.h>
 
 #include <cmath>
+#include <cstdlib>
 
 #include "pre/parameter.h"
 
 namespace solver {
 void FVMSolver::ZeroRes() {
+  int ibegf = 0;
   int ibegn = 0;
   for (int ib = 0; ib < geom.numBoundSegs; ++ib) {
     int iendn = geom.ibound[ib].bnodeIndex;
+    int iendf = geom.ibound[ib].bfaceIndex;
     auto name = geom.bname[ib];
     auto type = param.boundaryMap.find(name)->second;
     if (type == preprocess::BoundaryType::Symmetric) {
-      if (geom.BoundTypes[ib] - 500 < 2) {
+      double sx = 0.0;
+      double sy = 0.0;
+      for (int ibf = ibegf; ibf <= iendf; ++ibf) {
+        sx += geom.sbf[ibf].x;
+        sy += geom.sbf[ibf].y;
+      }
+      if (std::abs(sx) > std::abs(sy)) {
         for (int ibn = ibegn; ibn <= iendn; ++ibn) {
           int i = geom.boundaryNode[ibn].node;
           rhs[i].xmom = 0.0;
@@ -32,6 +41,7 @@ void FVMSolver::ZeroRes() {
       }
     }
     ibegn = iendn + 1;
+    ibegf = iendf + 1;
   }
 }
 

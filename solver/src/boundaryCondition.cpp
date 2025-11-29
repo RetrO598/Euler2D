@@ -7,15 +7,6 @@
 
 #include "pre/parameter.h"
 #include "solver/variableDef.h"
-/*
-100-199 = inflow
-200-299 = outflow
-300-399 = viscous wall
-400-499 = inviscid wall
-500-599 = symmetry line
-600-699 = farfield
-700-799 = periodic boundary
-*/
 
 namespace solver {
 void FVMSolver::BoundaryConditions() {
@@ -23,7 +14,6 @@ void FVMSolver::BoundaryConditions() {
   for (int ib = 0; ib < geom.numBoundSegs; ++ib) {
     auto name = geom.bname[ib];
     auto type = param.boundaryMap.find(name)->second;
-    int itype = geom.BoundTypes[ib];
     int iendn = geom.ibound[ib].bnodeIndex;
 
     if (type == preprocess::BoundaryType::Inflow) {
@@ -39,7 +29,6 @@ void FVMSolver::BoundaryConditions() {
   for (int ib = 0; ib < geom.numBoundSegs; ++ib) {
     auto name = geom.bname[ib];
     auto type = param.boundaryMap.find(name)->second;
-    int itype = geom.BoundTypes[ib];
     int iendn = geom.ibound[ib].bnodeIndex;
     if (param.equationtype_ == preprocess::equationType::NavierStokes &&
         (type == preprocess::BoundaryType::NoSlipWall)) {
@@ -445,7 +434,6 @@ void FVMSolver::BoundOutflow(int beg, int end) {
 void FVMSolver::WallVisc() {
   int ibegn = 0;
   for (int ib = 0; ib < geom.numBoundSegs; ++ib) {
-    int itype = geom.BoundTypes[ib];
     int iendn = geom.ibound[ib].bnodeIndex;
     auto name = geom.bname[ib];
     auto type = param.boundaryMap.find(name)->second;

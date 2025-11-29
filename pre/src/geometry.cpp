@@ -12,9 +12,12 @@
 #include <string>
 #include <vector>
 
+#include "pre/parameter.h"
+
 namespace preprocess {
-Geometry::Geometry(const std::string &filename, const std::string &commentChar)
-    : gridReader(filename, commentChar) {
+Geometry::Geometry(const parameter& param, const std::string& commentChar)
+    : gridReader(param.gridFile, commentChar),
+      boundaryMap(std::move(param.boundaryMap)) {
   phyNodes = 0;
   phyEdges = 0;
   numTria = 0;
@@ -27,13 +30,14 @@ void Geometry::ReadGrid() {
   std::string str = gridReader.readLineFiltered();
   std::stringstream(str) >> phyNodes >> numTria >> numBoundSegs;
 
-  BoundTypes.resize(numBoundSegs);
+  // BoundTypes.resize(numBoundSegs);
   bname.resize(numBoundSegs);
   ibound.resize(numBoundSegs);
 
   for (int ib = 0; ib < numBoundSegs; ++ib) {
     str = gridReader.readLineFiltered();
-    std::stringstream(str) >> BoundTypes[ib] >> ibound[ib].bfaceIndex >>
+    int skip;
+    std::stringstream(str) >> skip >> ibound[ib].bfaceIndex >>
         ibound[ib].bnodeIndex;
     ibound[ib].bfaceIndex--;
     ibound[ib].bnodeIndex--;
@@ -62,7 +66,9 @@ void Geometry::ReadGrid() {
   for (int i = 0; i < numBoundSegs; ++i) {
     iendf = ibound[i].bfaceIndex;
     iendn = ibound[i].bnodeIndex;
-    if (BoundTypes[i] >= 700 && BoundTypes[i] < 800) {
+    auto name = bname[i];
+    auto type = boundaryMap.find(name)->second;
+    if (type == BoundaryType::Periodic) {
       for (int ibn = ibegn; ibn <= iendn; ++ibn) {
         str = gridReader.readLineFiltered();
         std::stringstream(str) >> boundaryNode[ibn].node >>
@@ -129,11 +135,13 @@ void Geometry::DummyNodes() {
   for (int ib = 0; ib < numBoundSegs; ++ib) {
     iendf = ibound[ib].bfaceIndex;
     iendn = ibound[ib].bnodeIndex;
-    itype = BoundTypes[ib];
-    flag = (itype >= 100 && itype < 200) || (itype >= 200 && itype < 300) ||
-           (itype >= 600 && itype < 700);
+    // itype = BoundTypes[ib];
+    auto name = bname[ib];
+    auto type = boundaryMap.find(name)->second;
+    flag = (type == BoundaryType::Inflow) || (type == BoundaryType::Outflow) ||
+           (type == BoundaryType::Farfield);
 
-    if (itype < 700 || itype >= 800) {
+    if (type != BoundaryType::Periodic) {
       std::fill(marker.begin(), marker.end(), false);
 
       for (int i = ibegf; i <= iendf; ++i) {
@@ -153,7 +161,8 @@ void Geometry::DummyNodes() {
       }
 
       if ((ibegn - 1) != iendn) {
-        std::string str = "no. of nodes for boundary " + std::to_string(itype) +
+        std::string str = "no. of nodes for boundary " +
+                          std::to_string(int(type)) +
                           " is wrong. It should be " + std::to_string(iendn) +
                           " but it is " + std::to_string(ibegn - 1) + ".";
         throw std::runtime_error(str);
@@ -357,7 +366,9 @@ void Geometry::FaceVectorsVolumesBound() {
   ibegn = 0;
   for (ib = 0; ib < numBoundSegs; ++ib) {
     iendn = ibound[ib].bnodeIndex;
-    if (BoundTypes[ib] >= 700 && BoundTypes[ib] < 800) {
+    auto name = bname[ib];
+    auto type = boundaryMap.find(name)->second;
+    if (type == BoundaryType::Periodic) {
       for (ibn = ibegn; ibn <= iendn; ++ibn) {
         i = boundaryNode[ibn].node;
         j = boundaryNode[ibn].dummy;
@@ -449,9 +460,11 @@ void Geometry::FaceVectorsVolumesBound() {
   for (ib = 0; ib < numBoundSegs; ++ib) {
     iendf = ibound[ib].bfaceIndex;
     iendn = ibound[ib].bnodeIndex;
-    itype = BoundTypes[ib];
-    flag = (itype >= 100 && itype < 200) || (itype >= 200 && itype < 300) ||
-           (itype >= 600 && itype < 700);
+    // itype = BoundTypes[ib];
+    auto name = bname[ib];
+    auto type = boundaryMap.find(name)->second;
+    flag = (type == BoundaryType::Inflow) || (type == BoundaryType::Outflow) ||
+           (type == BoundaryType::Farfield);
 
     if (flag) {
       for (ibf = ibegf; ibf <= iendf; ++ibf) {
@@ -510,7 +523,9 @@ void Geometry::CheckMetrics() {
   ibegf = 0;
   for (ib = 0; ib < numBoundSegs; ++ib) {
     iendf = ibound[ib].bfaceIndex;
-    if (BoundTypes[ib] < 700 || BoundTypes[ib] >= 800) {
+    auto name = bname[ib];
+    auto type = boundaryMap.find(name)->second;
+    if (type != BoundaryType::Periodic) {
       for (ibf = ibegf; ibf <= iendf; ++ibf) {
         i = boundaryFace[ibf].nodei;
         j = boundaryFace[ibf].nodej;
@@ -527,7 +542,9 @@ void Geometry::CheckMetrics() {
   ibegn = 0;
   for (ib = 0; ib < numBoundSegs; ++ib) {
     iendn = ibound[ib].bnodeIndex;
-    if (BoundTypes[ib] >= 700 && BoundTypes[ib] < 800) {
+    auto name = bname[ib];
+    auto type = boundaryMap.find(name)->second;
+    if (type == BoundaryType::Periodic) {
       for (ibn = ibegn; ibn <= iendn; ++ibn) {
         i = boundaryNode[ibn].node;
         j = boundaryNode[ibn].dummy;
@@ -565,7 +582,10 @@ void Geometry::FaceVectorsSymm() {
   for (ib = 0; ib < numBoundSegs; ++ib) {
     iendf = ibound[ib].bfaceIndex;
     iendn = ibound[ib].bnodeIndex;
-    if (BoundTypes[ib] >= 500 && BoundTypes[ib] < 600) {
+    auto name = bname[ib];
+    auto type = boundaryMap.find(name)->second;
+    if (type == BoundaryType::Symmetric) {
+      int symmetryIndex;
       sx = 0.0;
       sy = 0.0;
       for (ibf = ibegf; ibf <= iendf; ++ibf) {
@@ -573,13 +593,13 @@ void Geometry::FaceVectorsSymm() {
         sy += sbf[ibf].y;
       }
       if (std::abs(sx) > std::abs(sy)) {
-        BoundTypes[ib] = 501;
+        symmetryIndex = 501;
       } else {
-        BoundTypes[ib] = 502;
+        symmetryIndex = 502;
       }
 
       for (ibn = ibegn; ibn <= iendn; ++ibn) {
-        marker[boundaryNode[ibn].node] = BoundTypes[ib] - 500;
+        marker[boundaryNode[ibn].node] = symmetryIndex - 500;
       }
     }
     ibegf = iendf + 1;
@@ -622,7 +642,9 @@ void Geometry::volumeProjections() {
   ibegf = 0;
   for (ib = 0; ib < numBoundSegs; ++ib) {
     iendf = ibound[ib].bfaceIndex;
-    if (BoundTypes[ib] < 700 || BoundTypes[ib] >= 800) {
+    auto name = bname[ib];
+    auto type = boundaryMap.find(name)->second;
+    if (type != BoundaryType::Periodic) {
       for (ibf = ibegf; ibf <= iendf; ++ibf) {
         i = boundaryFace[ibf].nodei;
         j = boundaryFace[ibf].nodej;
@@ -640,7 +662,9 @@ void Geometry::volumeProjections() {
   ibegn = 0;
   for (ib = 0; ib < numBoundSegs; ++ib) {
     iendn = ibound[ib].bnodeIndex;
-    if (BoundTypes[ib] >= 700 && BoundTypes[ib] < 800) {
+    auto name = bname[ib];
+    auto type = boundaryMap.find(name)->second;
+    if (type == BoundaryType::Periodic) {
       for (ibn = ibegn; ibn <= iendn; ibn++) {
         i = boundaryNode[ibn].node;
         j = boundaryNode[ibn].dummy;
