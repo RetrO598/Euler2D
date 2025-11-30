@@ -27,6 +27,12 @@ class FVMSolver {
   void BoundWallVisc(int beg, int end);
   void WallVisc();
 
+  void boundaryConditions();
+  void boundInflow();
+  void boundOutflow();
+  void boundFarfield();
+  void boundWallVisc();
+
   void Gradients();
   void GradientsVisc();
 

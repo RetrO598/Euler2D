@@ -113,8 +113,10 @@ void BaseLimiter::limiterInit() {
     auto type = param.boundaryMap.find(name)->second;
     if (type == preprocess::BoundaryType::Periodic) {
       for (int ibn = ibegn; ibn <= iendn; ++ibn) {
-        int i = geom.boundaryNode[ibn].node;
-        int j = geom.boundaryNode[ibn].dummy;
+        // int i = geom.boundaryNode[ibn].node;
+        // int j = geom.boundaryNode[ibn].dummy;
+        int i = geom.vertexList[ibn].nodeIdx;
+        int j = geom.vertexList[ibn].periodicPair;
 
         umin[i].dens = std::min(umin[i].dens, umin[j].dens);
         umin[i].velx = std::min(umin[i].velx, umin[j].velx);
@@ -236,8 +238,10 @@ void VenkatakrishnanLimiter::limiterUpdate() {
     auto type = param.boundaryMap.find(name)->second;
     if (type == preprocess::BoundaryType::Periodic) {
       for (int ibn = ibegn; ibn <= iendn; ++ibn) {
-        int i = geom.boundaryNode[ibn].node;
-        int j = geom.boundaryNode[ibn].dummy;
+        // int i = geom.boundaryNode[ibn].node;
+        // int j = geom.boundaryNode[ibn].dummy;
+        int i = geom.vertexList[ibn].nodeIdx;
+        int j = geom.vertexList[ibn].periodicPair;
 
         lim[i].dens = std::min(lim[i].dens, lim[j].dens);
         lim[i].velx = std::min(lim[i].velx, lim[j].velx);
@@ -381,8 +385,10 @@ void NishikawaR3::limiterUpdate() {
     auto type = param.boundaryMap.find(name)->second;
     if (type == preprocess::BoundaryType::Periodic) {
       for (int ibn = ibegn; ibn <= iendn; ++ibn) {
-        int i = geom.boundaryNode[ibn].node;
-        int j = geom.boundaryNode[ibn].dummy;
+        // int i = geom.boundaryNode[ibn].node;
+        // int j = geom.boundaryNode[ibn].dummy;
+        int i = geom.vertexList[ibn].nodeIdx;
+        int j = geom.vertexList[ibn].periodicPair;
 
         lim[i].dens = std::min(lim[i].dens, lim[j].dens);
         lim[i].velx = std::min(lim[i].velx, lim[j].velx);

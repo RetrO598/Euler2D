@@ -28,6 +28,7 @@ struct idBoundary {
 
 struct vertex {
   int nodeIdx;
+  int periodicPair;
   std::array<double, 2> normal{};
 };
 

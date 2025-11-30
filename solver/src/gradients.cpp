@@ -129,7 +129,8 @@ void FVMSolver::Gradients() {
       }
       if (std::abs(sx) > std::abs(sy)) {
         for (int ibn = ibegn; ibn <= iendn; ++ibn) {
-          int i = geom.boundaryNode[ibn].node;
+          // int i = geom.boundaryNode[ibn].node;
+          int i = geom.vertexList[ibn].nodeIdx;
           gradx[i].dens = 0.0;
           grady[i].velx = 0.0;
           gradx[i].vely = 0.0;
@@ -137,7 +138,8 @@ void FVMSolver::Gradients() {
         }
       } else {
         for (int ibn = ibegn; ibn <= iendn; ++ibn) {
-          int i = geom.boundaryNode[ibn].node;
+          // int i = geom.boundaryNode[ibn].node;
+          int i = geom.vertexList[ibn].nodeIdx;
           grady[i].dens = 0.0;
           grady[i].velx = 0.0;
           gradx[i].vely = 0.0;
@@ -304,7 +306,8 @@ void FVMSolver::GradientsVisc() {
       }
       if (std::abs(sx) > std::abs(sy)) {
         for (int ibn = ibegn; ibn <= iendn; ++ibn) {
-          int i = geom.boundaryNode[ibn].node;
+          // int i = geom.boundaryNode[ibn].node;
+          int i = geom.vertexList[ibn].nodeIdx;
           gradx[i].dens = 0.0;
           grady[i].velx = 0.0;
           gradx[i].vely = 0.0;
@@ -313,7 +316,8 @@ void FVMSolver::GradientsVisc() {
         }
       } else {
         for (int ibn = ibegn; ibn <= iendn; ++ibn) {
-          int i = geom.boundaryNode[ibn].node;
+          // int i = geom.boundaryNode[ibn].node;
+          int i = geom.vertexList[ibn].nodeIdx;
           grady[i].dens = 0.0;
           grady[i].velx = 0.0;
           gradx[i].vely = 0.0;

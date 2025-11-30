@@ -17,7 +17,8 @@ class Geometry {
   std::vector<Tria> tria;
   std::vector<Edge> edge;
   std::vector<BoundaryFace> boundaryFace;
-  std::vector<BoundaryNode> boundaryNode;
+  // std::vector<std::vector<BoundaryFace>> faceList;
+  // std::vector<BoundaryNode> boundaryNode;
   std::vector<idBoundary> ibound;
   std::vector<Node> coords;
   std::vector<Node> sij;
@@ -26,6 +27,7 @@ class Geometry {
   std::vector<Node> sproj;
   std::vector<std::string> bname;
   std::vector<vertex> vertexList;
+  // std::vector<std::vector<vertex>> vertexlist;
   std::unordered_map<std::string, preprocess::BoundaryType> boundaryMap;
 
   Geometry(const parameter &param, const std::string &commentChar = "#");
@@ -39,6 +41,7 @@ class Geometry {
   void printInfo();
   void GetNumberBoundNodes(int btypeFrom, int btypeTo) const;
   void ReadGrid();
+  void ReadSU2Grid();
   void outputMeshInfo();
 
  private:

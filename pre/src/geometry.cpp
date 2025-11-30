@@ -49,12 +49,14 @@ void Geometry::ReadGrid() {
   numBoundFaces = ibound[numBoundSegs - 1].bfaceIndex + 1;
   numBoundNodes = ibound[numBoundSegs - 1].bnodeIndex + 1;
 
-  boundaryNode.resize(numBoundNodes);
+  // boundaryNode.resize(numBoundNodes);
   vertexList.resize(numBoundNodes);
+  // vertexlist.resize(numBoundSegs);
+  // faceList.resize(numBoundSegs);
   boundaryFace.resize(numBoundFaces);
 
-  auto node = BoundaryNode{-777, -777, -777};
-  std::fill(boundaryNode.begin(), boundaryNode.end(), node);
+  // auto node = BoundaryNode{-777, -777, -777};
+  // std::fill(boundaryNode.begin(), boundaryNode.end(), node);
 
   auto face = BoundaryFace{-777, -777};
   std::fill(boundaryFace.begin(), boundaryFace.end(), face);
@@ -66,16 +68,22 @@ void Geometry::ReadGrid() {
   for (int i = 0; i < numBoundSegs; ++i) {
     iendf = ibound[i].bfaceIndex;
     iendn = ibound[i].bnodeIndex;
+    // faceList
+    // vertexlist[i].resize(iendn - ibegn + 1);
     auto name = bname[i];
     auto type = boundaryMap.find(name)->second;
     if (type == BoundaryType::Periodic) {
       for (int ibn = ibegn; ibn <= iendn; ++ibn) {
         str = gridReader.readLineFiltered();
-        std::stringstream(str) >> boundaryNode[ibn].node >>
-            boundaryNode[ibn].dummy;
-        boundaryNode[ibn].node--;
-        boundaryNode[ibn].dummy--;
-        vertexList[ibn].nodeIdx = boundaryNode[ibn].node;
+        std::stringstream(str) >> vertexList[ibn].nodeIdx >>
+            vertexList[ibn].periodicPair;
+        vertexList[ibn].nodeIdx--;
+        vertexList[ibn].periodicPair--;
+        // vertexlist[i][ibn].nodeIdx = vertexList[ibn].nodeIdx;
+        // vertexlist[i][ibn].periodicPair = vertexList[ibn].periodicPair;
+
+        // vertexList[ibn].nodeIdx = boundaryNode[ibn].node;
+        // vertexList[ibn].periodicPair = boundaryNode[ibn].dummy;
       }
     } else {
       for (int ibf = ibegf; ibf <= iendf; ++ibf) {
@@ -84,11 +92,16 @@ void Geometry::ReadGrid() {
             boundaryFace[ibf].nodej;
         boundaryFace[ibf].nodei--;
         boundaryFace[ibf].nodej--;
+
+        // faceList[i][ibf].nodei = boundaryFace[ibf].nodei;
+        // faceList[i][ibf].nodej = boundaryFace[ibf].nodej;
       }
     }
     ibegf = iendf + 1;
     ibegn = iendn + 1;
   }
+
+  // faceList.shrink_to_fit();
 
   for (int i = 0; i < numBoundFaces; ++i) {
     if (boundaryFace[i].nodei < 0 || boundaryFace[i].nodej < 0) {
@@ -122,7 +135,7 @@ void Geometry::ReadGrid() {
 }
 
 void Geometry::DummyNodes() {
-  bool flag;
+  // bool flag;
   std::vector<bool> marker;
   marker.resize(phyNodes);
 
@@ -138,8 +151,9 @@ void Geometry::DummyNodes() {
     // itype = BoundTypes[ib];
     auto name = bname[ib];
     auto type = boundaryMap.find(name)->second;
-    flag = (type == BoundaryType::Inflow) || (type == BoundaryType::Outflow) ||
-           (type == BoundaryType::Farfield);
+    // flag = (type == BoundaryType::Inflow) || (type == BoundaryType::Outflow)
+    // ||
+    //        (type == BoundaryType::Farfield);
 
     if (type != BoundaryType::Periodic) {
       std::fill(marker.begin(), marker.end(), false);
@@ -154,7 +168,7 @@ void Geometry::DummyNodes() {
           if (ibegn >= numBoundNodes) {
             throw std::runtime_error("Max. number of boundary nodes exceeded.");
           }
-          boundaryNode[ibegn].node = i;
+          // boundaryNode[ibegn].node = i;
           vertexList[ibegn].nodeIdx = i;
           ibegn++;
         }
@@ -370,8 +384,10 @@ void Geometry::FaceVectorsVolumesBound() {
     auto type = boundaryMap.find(name)->second;
     if (type == BoundaryType::Periodic) {
       for (ibn = ibegn; ibn <= iendn; ++ibn) {
-        i = boundaryNode[ibn].node;
-        j = boundaryNode[ibn].dummy;
+        // i = boundaryNode[ibn].node;
+        // j = boundaryNode[ibn].dummy;
+        i = vertexList[ibn].nodeIdx;
+        j = vertexList[ibn].periodicPair;
         vol[i] += vol[j];
         vol[j] = vol[i];
       }
@@ -471,13 +487,13 @@ void Geometry::FaceVectorsVolumesBound() {
         n1 = boundaryFace[ibf].nodei;
         n2 = boundaryFace[ibf].nodej;
         for (ibn = ibegn; ibn <= iendn; ++ibn) {
-          if (boundaryNode[ibn].node == n1) {
-            ie = boundaryNode[ibn].indexEdge;
+          if (vertexList[ibn].nodeIdx == n1) {
+            // ie = boundaryNode[ibn].indexEdge;
             n1 = -777;
             vertexList[ibn].normal[0] += 0.5 * sbf[ibf].x;
             vertexList[ibn].normal[1] += 0.5 * sbf[ibf].y;
-          } else if (boundaryNode[ibn].node == n2) {
-            ie = boundaryNode[ibn].indexEdge;
+          } else if (vertexList[ibn].nodeIdx == n2) {
+            // ie = boundaryNode[ibn].indexEdge;
             n2 = -777;
             vertexList[ibn].normal[0] += 0.5 * sbf[ibf].x;
             vertexList[ibn].normal[1] += 0.5 * sbf[ibf].y;
@@ -546,8 +562,10 @@ void Geometry::CheckMetrics() {
     auto type = boundaryMap.find(name)->second;
     if (type == BoundaryType::Periodic) {
       for (ibn = ibegn; ibn <= iendn; ++ibn) {
-        i = boundaryNode[ibn].node;
-        j = boundaryNode[ibn].dummy;
+        // i = boundaryNode[ibn].node;
+        // j = boundaryNode[ibn].dummy
+        i = vertexList[ibn].nodeIdx;
+        j = vertexList[ibn].periodicPair;
         fvecSum[i].x += fvecSum[j].x;
         fvecSum[i].y += fvecSum[j].y;
         fvecSum[j].x = fvecSum[i].x;
@@ -599,7 +617,7 @@ void Geometry::FaceVectorsSymm() {
       }
 
       for (ibn = ibegn; ibn <= iendn; ++ibn) {
-        marker[boundaryNode[ibn].node] = symmetryIndex - 500;
+        marker[vertexList[ibn].nodeIdx] = symmetryIndex - 500;
       }
     }
     ibegf = iendf + 1;
@@ -666,8 +684,10 @@ void Geometry::volumeProjections() {
     auto type = boundaryMap.find(name)->second;
     if (type == BoundaryType::Periodic) {
       for (ibn = ibegn; ibn <= iendn; ibn++) {
-        i = boundaryNode[ibn].node;
-        j = boundaryNode[ibn].dummy;
+        // i = boundaryNode[ibn].node;
+        // j = boundaryNode[ibn].dummy;
+        i = vertexList[ibn].nodeIdx;
+        j = vertexList[ibn].periodicPair;
         sproj[i].x += sproj[j].x;
         sproj[i].y += sproj[j].y;
         sproj[j].x = sproj[i].x;

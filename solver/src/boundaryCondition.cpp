@@ -40,9 +40,10 @@ void FVMSolver::BoundaryConditions() {
 
 void FVMSolver::BoundInflow(int beg, int end) {
   for (int ib = beg; ib <= end; ++ib) {
-    int ibn = geom.boundaryNode[ib].node;
-    int idn = geom.boundaryNode[ib].dummy;
-    int ie = geom.boundaryNode[ib].indexEdge;
+    // int ibn = geom.boundaryNode[ib].node;
+    int ibn = geom.vertexList[ib].nodeIdx;
+    // int idn = geom.boundaryNode[ib].dummy;
+    // int ie = geom.boundaryNode[ib].indexEdge;
 
     double ds = std::sqrt(
         geom.vertexList[ib].normal[0] * geom.vertexList[ib].normal[0] +
@@ -109,9 +110,10 @@ void FVMSolver::BoundFarfield(int beg, int end) {
     double bet = std::sqrt(1.0 - param.MaInfinity * param.MaInfinity);
     double cir = 0.25 * param.chord * cl * param.velInfinity / M_PI;
     for (int ib = beg; ib <= end; ++ib) {
-      int ibn = geom.boundaryNode[ib].node;
-      int idn = geom.boundaryNode[ib].dummy;
-      int ie = geom.boundaryNode[ib].indexEdge;
+      // int ibn = geom.boundaryNode[ib].node;
+      int ibn = geom.vertexList[ib].nodeIdx;
+      // int idn = geom.boundaryNode[ib].dummy;
+      // int ie = geom.boundaryNode[ib].indexEdge;
 
       double gam1 = dv[ibn].gamma - 1.0;
       double ggm1 = dv[ibn].gamma / gam1;
@@ -250,9 +252,10 @@ void FVMSolver::BoundFarfield(int beg, int end) {
     }
   } else {
     for (int ib = beg; ib <= end; ++ib) {
-      int ibn = geom.boundaryNode[ib].node;
-      int idn = geom.boundaryNode[ib].dummy;
-      int ie = geom.boundaryNode[ib].indexEdge;
+      // int ibn = geom.boundaryNode[ib].node;
+      int ibn = geom.vertexList[ib].nodeIdx;
+      // int idn = geom.boundaryNode[ib].dummy;
+      // int ie = geom.boundaryNode[ib].indexEdge;
 
       double gam1 = dv[ibn].gamma - 1.0;
       farfield.dens = param.RhoInfinity;
@@ -371,9 +374,10 @@ void FVMSolver::BoundFarfield(int beg, int end) {
 
 void FVMSolver::BoundOutflow(int beg, int end) {
   for (int ib = beg; ib <= end; ++ib) {
-    int ibn = geom.boundaryNode[ib].node;
-    int idn = geom.boundaryNode[ib].dummy;
-    int ie = geom.boundaryNode[ib].indexEdge;
+    // int ibn = geom.boundaryNode[ib].node;
+    int ibn = geom.vertexList[ib].nodeIdx;
+    // int idn = geom.boundaryNode[ib].dummy;
+    // int ie = geom.boundaryNode[ib].indexEdge;
 
     double ds = std::sqrt(
         geom.vertexList[ib].normal[0] * geom.vertexList[ib].normal[0] +
@@ -447,7 +451,8 @@ void FVMSolver::WallVisc() {
 
 void FVMSolver::BoundWallVisc(int beg, int end) {
   for (int ib = beg; ib <= end; ++ib) {
-    int ibn = geom.boundaryNode[ib].node;
+    // int ibn = geom.boundaryNode[ib].node;
+    int ibn = geom.vertexList[ib].nodeIdx;
 
     cv[ibn].xmom = 0.0;
     cv[ibn].ymom = 0.0;
@@ -464,8 +469,10 @@ void FVMSolver::PeriodicPrim(std::vector<PRIM_VAR> &var) {
     auto type = param.boundaryMap.find(name)->second;
     if (type == preprocess::BoundaryType::Periodic) {
       for (int ibn = ibegn; ibn <= iendn; ++ibn) {
-        int i = geom.boundaryNode[ibn].node;
-        int j = geom.boundaryNode[ibn].dummy;
+        // int i = geom.boundaryNode[ibn].node;
+        // int j = geom.boundaryNode[ibn].dummy;
+        int i = geom.vertexList[ibn].nodeIdx;
+        int j = geom.vertexList[ibn].periodicPair;
 
         var[i].dens += var[j].dens;
         var[i].velx += var[j].velx;
@@ -489,8 +496,11 @@ void FVMSolver::PeriodicCons(std::vector<CONS_VAR> &var) {
     auto type = param.boundaryMap.find(name)->second;
     if (type == preprocess::BoundaryType::Periodic) {
       for (int ibn = ibegn; ibn <= iendn; ++ibn) {
-        int i = geom.boundaryNode[ibn].node;
-        int j = geom.boundaryNode[ibn].dummy;
+        // int i = geom.boundaryNode[ibn].node;
+        // int j = geom.boundaryNode[ibn].dummy;
+        int i = geom.vertexList[ibn].nodeIdx;
+        int j = geom.vertexList[ibn].periodicPair;
+
         var[i].dens += var[j].dens;
         var[i].xmom += var[j].xmom;
         var[i].ymom += var[j].ymom;
@@ -516,8 +526,11 @@ void FVMSolver::PeriodicInt(std::vector<int> &var) {
     auto type = param.boundaryMap.find(name)->second;
     if (type == preprocess::BoundaryType::Periodic) {
       for (ibn = ibegn; ibn <= iendn; ibn++) {
-        i = geom.boundaryNode[ibn].node;
-        j = geom.boundaryNode[ibn].dummy;
+        // i = geom.boundaryNode[ibn].node;
+        // j = geom.boundaryNode[ibn].dummy;
+        int i = geom.vertexList[ibn].nodeIdx;
+        int j = geom.vertexList[ibn].periodicPair;
+
         var[i] += var[j];
         var[j] = var[i];
       }
@@ -535,8 +548,11 @@ void FVMSolver::PeriodicVisc(std::vector<double> &gradTx,
     int iendn = geom.ibound[ib].bnodeIndex;
     if (type == preprocess::BoundaryType::Periodic) {
       for (int ibn = ibegn; ibn <= iendn; ++ibn) {
-        int i = geom.boundaryNode[ibn].node;
-        int j = geom.boundaryNode[ibn].dummy;
+        // int i = geom.boundaryNode[ibn].node;
+        // int j = geom.boundaryNode[ibn].dummy;
+        int i = geom.vertexList[ibn].nodeIdx;
+        int j = geom.vertexList[ibn].periodicPair;
+
         gradTx[i] += gradTx[j];
         gradTy[i] += gradTy[j];
         gradTx[j] = gradTx[i];
