@@ -25,7 +25,7 @@ class simpleReader {
     }
   };
 
-  simpleReader() = delete;
+  simpleReader() = default;
 
   ~simpleReader() {
     if (file_.is_open()) {
@@ -48,6 +48,8 @@ class simpleReader {
   std::size_t linesCount() const;
 
   std::string_view getFilePath() const;
+
+  std::ifstream &getStream() { return file_; }
 
  private:
   std::string filePath;

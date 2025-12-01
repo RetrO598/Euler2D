@@ -3,8 +3,12 @@
 #include <pre/reader.h>
 #include <solver/FVMSolver.h>
 
+#include <grid/grid_builder.hpp>
 #include <iostream>
 #include <string>
+
+#include "mesh/mesh_data.hpp"
+#include "mesh/mesh_reader.hpp"
 
 int main(int argc, char *argv[]) {
   if (argc < 2) {
@@ -23,9 +27,26 @@ int main(int argc, char *argv[]) {
 
   preprocess::Geometry geometry(param);
 
-  geometry.ReadGrid();
-  geometry.printInfo();
-  geometry.ComputeMetrics();
+  std::string extension = ".su2";
+  if (param.gridFile.size() >= extension.size() &&
+      param.gridFile.compare(param.gridFile.size() - extension.size(),
+                             extension.size(), extension) == 0) {
+    // geometry.ReadSU2Grid();
+    // geometry.printInfo();
+    // geometry.ComputeMetrics();
+    preprocess::SU2Reader reader(param.gridFile);
+    auto mesh = reader.readMesh();
+    auto &data = static_cast<preprocess::MeshData<2> &>(*mesh);
+    preprocess::GridBuilder::FVMBuilder::build(data);
+    geometry = data.changeTo2Dgeometry(param.boundaryMap);
+    geometry.printInfo();
+  } else {
+    geometry.ReadGrid();
+    geometry.printInfo();
+    geometry.ComputeMetrics();
+  }
+
+  // geometry.outputMeshInfo();
   solver::FVMSolver solver(param, geometry);
   solver.initSolver();
   solver.ConvToDependAll();

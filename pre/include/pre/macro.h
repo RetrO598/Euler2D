@@ -12,7 +12,7 @@ struct Tria {
   int node[3];
 };
 
-struct Edge {
+struct Edge2D {
   int nodei, nodej;
 };
 struct BoundaryFace {

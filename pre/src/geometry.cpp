@@ -7,6 +7,7 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <set>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -20,7 +21,7 @@ Geometry::Geometry(const parameter& param, const std::string& commentChar)
       boundaryMap(std::move(param.boundaryMap)) {
   phyNodes = 0;
   phyEdges = 0;
-  numTria = 0;
+  numElems = 0;
   numBoundSegs = 0;
   numBoundFaces = 0;
   numBoundNodes = 0;
@@ -28,7 +29,7 @@ Geometry::Geometry(const parameter& param, const std::string& commentChar)
 
 void Geometry::ReadGrid() {
   std::string str = gridReader.readLineFiltered();
-  std::stringstream(str) >> phyNodes >> numTria >> numBoundSegs;
+  std::stringstream(str) >> phyNodes >> numElems >> numBoundSegs;
 
   // BoundTypes.resize(numBoundSegs);
   bname.resize(numBoundSegs);
@@ -118,9 +119,9 @@ void Geometry::ReadGrid() {
     std::stringstream(str) >> coords[i].x >> coords[i].y;
   }
 
-  tria.resize(numTria);
+  tria.resize(numElems);
 
-  for (int i = 0; i < numTria; ++i) {
+  for (int i = 0; i < numElems; ++i) {
     str = gridReader.readLineFiltered();
     std::stringstream(str) >> tria[i].node[0] >> tria[i].node[1] >>
         tria[i].node[2];
@@ -203,7 +204,7 @@ void Geometry::GenerateEdgeList() {
   phyEdges = 0;
 
   for (int n = 0; n < 3; ++n) {
-    for (int it = 0; it < numTria; ++it) {
+    for (int it = 0; it < numElems; ++it) {
       i = tria[it].node[n];
       if (n < 2) {
         j = tria[it].node[n + 1];
@@ -270,9 +271,161 @@ void Geometry::GenerateEdgeList() {
   }
 }
 
+void Geometry::ReadSU2Grid() {
+  std::string line;
+
+  gridReader.getStream().clear();
+
+  gridReader.getStream().seekg(0);
+
+  // This parser finds headers and then reads the subsequent data lines.
+
+  // It's more robust to blank lines and the specific ordering of the SU2 file.
+
+  // --- Find and parse NELEM ---
+
+  while (std::getline(gridReader.getStream(), line) &&
+
+         line.find("NELEM=") == std::string::npos)
+
+      ;
+
+  numElems = std::stoi(line.substr(line.find('=') + 1));
+
+  tria.resize(numElems);
+
+  for (int i = 0; i < numElems; ++i) {
+    // Read next non-empty line
+
+    while (std::getline(gridReader.getStream(), line) && line.empty())
+
+        ;
+
+    std::stringstream ss(line);
+
+    int type;
+
+    ss >> type >> tria[i].node[0] >> tria[i].node[1] >> tria[i].node[2];
+  }
+
+  // --- Find and parse NPOIN ---
+
+  while (std::getline(gridReader.getStream(), line) &&
+
+         line.find("NPOIN=") == std::string::npos)
+
+      ;
+
+  phyNodes = std::stoi(line.substr(line.find('=') + 1));
+
+  coords.resize(phyNodes);
+
+  for (int i = 0; i < phyNodes; ++i) {
+    while (std::getline(gridReader.getStream(), line) && line.empty())
+
+        ;
+
+    std::stringstream ss(line);
+
+    ss >> coords[i].x >> coords[i].y;
+  }
+
+  // --- Find and parse NMARK ---
+
+  while (std::getline(gridReader.getStream(), line) &&
+
+         line.find("NMARK=") == std::string::npos)
+
+      ;
+
+  numBoundSegs = std::stoi(line.substr(line.find('=') + 1));
+
+  bname.resize(numBoundSegs);
+
+  ibound.resize(numBoundSegs);
+
+  int cumulative_faces = 0;
+
+  int cumulative_nodes = 0;
+
+  for (int i = 0; i < numBoundSegs; ++i) {
+    // Find MARKER_TAG
+
+    while (std::getline(gridReader.getStream(), line) &&
+
+           line.find("MARKER_TAG=") == std::string::npos)
+
+        ;
+
+    std::string tag_value = line.substr(line.find('=') + 1);
+
+    tag_value.erase(0, tag_value.find_first_not_of(" \t\n\r"));
+
+    tag_value.erase(tag_value.find_last_not_of(" \t\n\r") + 1);
+
+    bname[i] = tag_value;
+
+    // Find MARKER_ELEMS
+
+    while (std::getline(gridReader.getStream(), line) &&
+
+           line.find("MARKER_ELEMS=") == std::string::npos)
+
+        ;
+
+    int elems_in_marker = std::stoi(line.substr(line.find('=') + 1));
+
+    size_t first_face_in_seg = boundaryFace.size();
+
+    for (int j = 0; j < elems_in_marker; ++j) {
+      while (std::getline(gridReader.getStream(), line) && line.empty())
+
+          ;
+
+      std::stringstream ss(line);
+
+      int type, n1, n2;
+
+      ss >> type >> n1 >> n2;
+
+      boundaryFace.push_back({n1, n2});
+    }
+
+    cumulative_faces += elems_in_marker;
+
+    ibound[i].bfaceIndex = cumulative_faces - 1;
+
+    std::set<int> unique_nodes;
+
+    for (size_t k = first_face_in_seg; k < boundaryFace.size(); ++k) {
+      unique_nodes.insert(boundaryFace[k].nodei);
+
+      unique_nodes.insert(boundaryFace[k].nodej);
+    }
+
+    std::vector<int> sorted_nodes(unique_nodes.begin(), unique_nodes.end());
+
+    for (int node_idx : sorted_nodes) {
+      vertexList.push_back({node_idx, -1, {0.0, 0.0}});
+    }
+
+    cumulative_nodes += unique_nodes.size();
+
+    ibound[i].bnodeIndex = cumulative_nodes - 1;
+  }
+
+  numBoundFaces = cumulative_faces;
+
+  numBoundNodes = cumulative_nodes;
+
+  GenerateEdgeList();
+
+  gridReader.close();
+}
+
 void Geometry::printInfo() {
   std::cout << "No. of interior nodes: " << phyNodes << "\n";
-  std::cout << "No. of grid cells :" << numTria << "\n";
+  std::cout << "No. of grid cells :" << numElems << "\n";
   std::cout << "No. of interior edges: " << phyEdges << "\n";
   std::cout << "Total number of edges: " << phyEdges << "\n";
   std::cout << "No. of boundary faces: " << numBoundFaces << "\n";
@@ -308,7 +461,7 @@ void Geometry::FaceVectorsVolumes() {
   std::fill(sij.begin(), sij.end(), node);
   std::fill(vol.begin(), vol.end(), 0.0);
 
-  for (it = 0; it < numTria; ++it) {
+  for (it = 0; it < numElems; ++it) {
     x1 = coords[tria[it].node[0]].x;
     y1 = coords[tria[it].node[0]].y;
     x2 = coords[tria[it].node[1]].x;
@@ -408,7 +561,7 @@ void Geometry::FaceVectorsVolumesBound() {
   std::fill(btria.begin(), btria.end(), -1);
 
   for (n = 0; n < 3; ++n) {
-    for (it = 0; it < numTria; ++it) {
+    for (it = 0; it < numElems; ++it) {
       i = tria[it].node[n];
       if (n < 2) {
         j = tria[it].node[n + 1];
@@ -702,7 +855,8 @@ void Geometry::outputMeshInfo() {
   std::ofstream outputFile1("sij.txt");
 
   for (int i = 0; i < phyEdges; ++i) {
-    outputFile1 << sij[i].x << " " << sij[i].y << "\n";
+    outputFile1 << sij[i].x << " " << sij[i].y << " " << edge[i].nodei << " "
+                << edge[i].nodej << "\n";
   }
 
   outputFile1.close();
@@ -716,23 +870,35 @@ void Geometry::outputMeshInfo() {
 
   std::ofstream outputFile3("vol.txt");
   for (int i = 0; i < phyNodes; ++i) {
-    outputFile3 << vol[i] << "\n";
+    outputFile3 << i << " " << coords[i].x << " " << coords[i].y << " "
+                << vol[i] << "\n";
   }
 
   outputFile3.close();
 
   std::ofstream outputFile4("sbf.txt");
   for (int i = 0; i < numBoundFaces; ++i) {
-    outputFile4 << sbf[i].x << " " << sbf[i].y << "\n";
+    outputFile4 << boundaryFace[i].nodei << " " << boundaryFace[i].nodej << " "
+                << sbf[i].x << " " << sbf[i].y << "\n";
   }
 
   outputFile4.close();
 
   std::ofstream outputFile5("sproj.txt");
   for (int i = 0; i < phyNodes; ++i) {
-    outputFile5 << sproj[i].x << " " << sproj[i].y << "\n";
+    outputFile5 << i << " " << sproj[i].x << " " << sproj[i].y << " " << vol[i]
+                << "\n";
   }
 
   outputFile5.close();
+
+  std::ofstream outputFile6("vertex.txt");
+  for (int i = 0; i < numBoundNodes; ++i) {
+    outputFile6 << i << " " << vertexList[i].nodeIdx << " "
+                << vertexList[i].normal[0] << " " << vertexList[i].normal[1]
+                << "\n";
+  }
+
+  outputFile6.close();
 }
 }  // namespace preprocess
