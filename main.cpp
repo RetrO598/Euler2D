@@ -16,14 +16,11 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   std::string inputFile = argv[1];
-  // preprocess::simpleReader reader(inputFile);
   preprocess::yamlReader reader(inputFile);
   preprocess::parameter param;
   // reader.customRead(param);
   reader.read(param);
   param.printParameters();
-
-  // reader.close();
 
   preprocess::Geometry geometry(param);
 
@@ -34,6 +31,7 @@ int main(int argc, char *argv[]) {
     // geometry.ReadSU2Grid();
     // geometry.printInfo();
     // geometry.ComputeMetrics();
+    std::cout << "reading SU2 format mesh" << "\n";
     preprocess::SU2Reader reader(param.gridFile);
     auto mesh = reader.readMesh();
     auto &data = static_cast<preprocess::MeshData<2> &>(*mesh);
@@ -46,7 +44,6 @@ int main(int argc, char *argv[]) {
     geometry.ComputeMetrics();
   }
 
-  // geometry.outputMeshInfo();
   solver::FVMSolver solver(param, geometry);
   solver.initSolver();
   solver.ConvToDependAll();

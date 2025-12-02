@@ -110,8 +110,6 @@ void FVMSolver::initSolver() {
     auto type = param.boundaryMap.find(name)->second;
     if (type == preprocess::BoundaryType::Periodic) {
       for (int ibn = ibegn; ibn <= iendn; ++ibn) {
-        // int i = geom.boundaryNode[ibn].node;
-        // int j = geom.boundaryNode[ibn].dummy;
         int i = geom.vertexList[ibn].nodeIdx;
         int j = geom.vertexList[ibn].periodicPair;
         cv[i].dens = 0.5 * (cv[i].dens + cv[j].dens);

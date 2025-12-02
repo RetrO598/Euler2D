@@ -21,27 +21,6 @@ void FVMBuilder::buildImpl(MeshData<DIM> &mesh) {
     std::cout << "Building 2D grid from " << mesh.PointList.size() << " points."
               << std::endl;
     SetPointConnectivity(mesh);
-
-    // for (Index iPoint = 0; iPoint < mesh.PointList.size(); ++iPoint) {
-    //   mesh.PointList[iPoint].resetElem();
-    //   mesh.PointList[iPoint].resetPoint();
-    //   mesh.PointList[iPoint].resetBoundary();
-    // }
-    // auto &boundList = mesh.BoundList;
-    // for (Index iMarker = 0; iMarker < mesh.nBound; ++iMarker) {
-    //   for (Index iElem = 0; iElem < mesh.nElemBound[iMarker]; ++iElem) {
-    //     std::string markerTag = mesh.MarkerTag[iMarker];
-    //     for (Index iNode = 0; iNode < boundList[iMarker][iElem].getnNodes();
-    //          ++iNode) {
-    //       Index iPoint = boundList[iMarker][iElem].getNodes(iNode);
-    //       mesh.PointList[iPoint].setBoundary(mesh.nBound);
-    //       mesh.PointList[iPoint].setPhysicalBoundary(true);
-    //       // if (markerTag == "EULER_WALL" || markerTag == "NOSLIP_WALL") {
-    //       //   pointList[invResult[iPoint]].setSolidBoundary(true);
-    //       // }
-    //     }
-    //   }
-    // }
     SetRCMOrdering(mesh);
     SetPointConnectivity(mesh);
     SetElementConnectivity(mesh);

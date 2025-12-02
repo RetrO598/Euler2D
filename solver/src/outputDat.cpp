@@ -23,8 +23,6 @@ void FVMSolver::writeTecplotDat() {
     }
 
     for (int i = 0; i < geom.numElems; ++i) {
-      // outFile << geom.tria[i].node[0] + 1 << " " << geom.tria[i].node[1] + 1
-      //         << " " << geom.tria[i].node[2] + 1 << "\n";
       outFile << geom.elements[i].getNodes(0) + 1 << " "
               << geom.elements[i].getNodes(1) + 1 << " "
               << geom.elements[i].getNodes(2) + 1 << "\n";
@@ -44,8 +42,6 @@ void FVMSolver::writeTecplotDat() {
     }
 
     for (int i = 0; i < geom.numElems; ++i) {
-      // outFile << geom.tria[i].node[0] + 1 << " " << geom.tria[i].node[1] + 1
-      //         << " " << geom.tria[i].node[2] + 1 << "\n";
       outFile << geom.elements[i].getNodes(0) + 1 << " "
               << geom.elements[i].getNodes(1) + 1 << " "
               << geom.elements[i].getNodes(2) + 1 << " "

@@ -23,13 +23,11 @@ void FVMSolver::ZeroRes() {
       }
       if (std::abs(sx) > std::abs(sy)) {
         for (int ibn = ibegn; ibn <= iendn; ++ibn) {
-          // int i = geom.boundaryNode[ibn].node;
           int i = geom.vertexList[ibn].nodeIdx;
           rhs[i].xmom = 0.0;
         }
       } else {
         for (int ibn = ibegn; ibn <= iendn; ++ibn) {
-          // int i = geom.boundaryNode[ibn].node;
           int i = geom.vertexList[ibn].nodeIdx;
           rhs[i].ymom = 0.0;
         }
@@ -37,7 +35,6 @@ void FVMSolver::ZeroRes() {
     } else if ((type == preprocess::BoundaryType::NoSlipWall) &&
                param.equationtype_ == preprocess::equationType::NavierStokes) {
       for (int ibn = ibegn; ibn <= iendn; ++ibn) {
-        // int i = geom.boundaryNode[ib].node;
         int i = geom.vertexList[ibn].nodeIdx;
         rhs[i].xmom = 0.0;
         rhs[i].ymom = 0.0;
