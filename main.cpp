@@ -7,6 +7,7 @@
 #include <iostream>
 #include <string>
 
+#include "io/vtk_writer.hpp"
 #include "mesh/mesh_data.hpp"
 #include "mesh/mesh_reader.hpp"
 
@@ -23,6 +24,7 @@ int main(int argc, char *argv[]) {
   param.printParameters();
 
   preprocess::Geometry geometry(param);
+  std::unique_ptr<preprocess::MeshDataBase> mesh;
 
   std::string extension = ".su2";
   if (param.gridFile.size() >= extension.size() &&
@@ -33,7 +35,7 @@ int main(int argc, char *argv[]) {
     // geometry.ComputeMetrics();
     std::cout << "reading SU2 format mesh" << "\n";
     preprocess::SU2Reader reader(param.gridFile);
-    auto mesh = reader.readMesh();
+    mesh = reader.readMesh();
     auto &data = static_cast<preprocess::MeshData<2> &>(*mesh);
     preprocess::GridBuilder::FVMBuilder::build(data);
     geometry = data.changeTo2Dgeometry(param.boundaryMap);
@@ -57,8 +59,15 @@ int main(int argc, char *argv[]) {
     solver.Convergence();
   } while (!solver.Converged());
 
-  solver.writeTecplotDat();
-  solver.writeLineDat();
+  // solver.writeTecplotDat();
+  // solver.writeLineDat();
+
+  if (mesh) {
+    std::cout << "Writing VTK output file..." << std::endl;
+    auto &meshData = static_cast<preprocess::MeshData<2> &>(*mesh);
+    std::string vtkFilename = param.title + ".vtu";
+    io::writeVTKFile(vtkFilename, meshData, solver);
+  }
 
   return 0;
 }

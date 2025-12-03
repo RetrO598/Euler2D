@@ -14,5 +14,7 @@ project(CppCFD LANGUAGES CXX)
 
 add_subdirectory(pre)
 add_subdirectory(solver)
+add_subdirectory(io)
+
 add_executable(main main.cpp)
-target_link_libraries(main PUBLIC pre solver)
+target_link_libraries(main PUBLIC pre solver io)

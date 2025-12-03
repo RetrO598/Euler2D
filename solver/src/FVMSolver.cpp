@@ -16,38 +16,38 @@ FVMSolver::FVMSolver(preprocess::parameter &parameter,
                      const preprocess::Geometry &geometry)
     : param(parameter), geom(geometry) {
   int nNodes = geom.phyNodes;
-  cv.reserve(nNodes);
-  cvOld.reserve(nNodes);
-  diss.reserve(nNodes);
-  rhs.reserve(nNodes);
+  cv.resize(nNodes);
+  cvOld.resize(nNodes);
+  diss.resize(nNodes);
+  rhs.resize(nNodes);
 
-  lim.reserve(nNodes);
-  gradx.reserve(nNodes);
-  grady.reserve(nNodes);
-  umin.reserve(nNodes);
-  umax.reserve(nNodes);
+  lim.resize(nNodes);
+  gradx.resize(nNodes);
+  grady.resize(nNodes);
+  umin.resize(nNodes);
+  umax.resize(nNodes);
 
-  timeSteps.reserve(nNodes);
+  timeSteps.resize(nNodes);
 
   if (param.equationtype_ == preprocess::equationType::NavierStokes) {
-    gradTx.reserve(nNodes);
-    gradTy.reserve(nNodes);
-    dvlam.reserve(nNodes);
+    gradTx.resize(nNodes);
+    gradTy.resize(nNodes);
+    dvlam.resize(nNodes);
   } else {
-    gradTx.reserve(0);
-    gradTy.reserve(0);
-    dvlam.reserve(0);
+    gradTx.resize(0);
+    gradTy.resize(0);
+    dvlam.resize(0);
   }
 
-  dv.reserve(nNodes);
+  dv.resize(nNodes);
 
   cl = 0.0;
 
   limiter = std::make_unique<VenkatakrishnanLimiter>(param, geom, cv, dv, umin,
                                                      umax, lim, gradx, grady);
 
-  numeric = std::make_unique<NumericRoe>(param, geom, cv, dv, diss, rhs, lim,
-                                         gradx, grady);
+  numeric = std::make_unique<NumericSLAU2>(param, geom, cv, dv, diss, rhs, lim,
+                                           gradx, grady);
 
   rhsIter.reserve(nNodes);
   rhsOld.reserve(nNodes);
@@ -89,7 +89,6 @@ void FVMSolver::initSolver() {
     double cs = std::sqrt(param.gamma * pinl / rho);
     double mach = std::sqrt(2.0 * ((param.TtInlet / temp) - 1.0) / gam1);
     double q = mach * cs;
-
     for (int i = 0; i < geom.phyNodes; ++i) {
       double beta = param.flowAngIn + dbeta * (geom.coords[i].x - xmin) / dx;
       double p = pinl + dp * (geom.coords[i].x - xmin) / dx;

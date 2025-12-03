@@ -8,9 +8,32 @@
 
 #include <memory>
 #include <vector>
+#include <string>
+
+// Forward-declarations for friend function signature
+namespace preprocess {
+template <int DIM>
+struct MeshData;
+}
+
+namespace solver {
+class FVMSolver;
+}
+
+namespace io {
+void writeVTKFile(const std::string& filename,
+                  const preprocess::MeshData<2>& mesh,
+                  const solver::FVMSolver& solver);
+} // namespace io
+
+
 namespace solver {
 
 class FVMSolver {
+  // Grant VTK writer access to private solution data (cv, timeSteps)
+  friend void io::writeVTKFile(const std::string&, const preprocess::MeshData<2>&,
+                             const solver::FVMSolver&);
+
  public:
   FVMSolver(preprocess::parameter &parameter,
             const preprocess::Geometry &geometry);
