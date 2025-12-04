@@ -4,7 +4,7 @@
 #include <cmath>
 
 namespace solver {
-void FVMSolver::fluxVisc(double beta) {
+void FVMSolver::fluxVisc() {
   double fv[3];
 
   for (int ie = 0; ie < geom.phyEdges; ++ie) {

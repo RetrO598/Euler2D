@@ -10,6 +10,7 @@
 #include "io/vtk_writer.hpp"
 #include "mesh/mesh_data.hpp"
 #include "mesh/mesh_reader.hpp"
+#include "solver/timeIntegrator.hpp"
 
 int main(int argc, char *argv[]) {
   if (argc < 2) {
@@ -53,9 +54,13 @@ int main(int argc, char *argv[]) {
 
   solver.limiter->limiterRefVals();
   solver.iter = 0;
+
+  solver::RungeKuttaTimeIntegrator integrator(solver);
+
   do {
     solver.iter++;
-    solver.solve();
+    integrator.timeAdvance();
+    // solver.solve();
     solver.Convergence();
   } while (!solver.Converged());
 

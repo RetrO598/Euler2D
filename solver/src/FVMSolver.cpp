@@ -46,8 +46,8 @@ FVMSolver::FVMSolver(preprocess::parameter &parameter,
   limiter = std::make_unique<VenkatakrishnanLimiter>(param, geom, cv, dv, umin,
                                                      umax, lim, gradx, grady);
 
-  numeric = std::make_unique<NumericSLAU2>(param, geom, cv, dv, diss, rhs, lim,
-                                           gradx, grady);
+  numeric = std::make_unique<NumericAUSMUP2>(param, geom, cv, dv, diss, rhs,
+                                             lim, gradx, grady);
 
   rhsIter.reserve(nNodes);
   rhsOld.reserve(nNodes);
@@ -184,6 +184,45 @@ void FVMSolver::ConvToDepend(int i) {
     double rat = std::sqrt(dv[i].temp / s2) * s12 / (1.0 + s1 / dv[i].temp);
     dvlam[i].mu = param.refVisc * rat;
     dvlam[i].lambda = dvlam[i].mu * (param.Cp / param.Prandtl);
+  }
+}
+
+void FVMSolver::updateResidualRK(int irk) {
+  numeric->DissipInit();
+
+  if (param.equationtype_ == preprocess::equationType::NavierStokes) {
+    GradientsVisc();
+    fluxVisc();
+  } else if (param.equationtype_ == preprocess::equationType::Euler) {
+    Gradients();
+  }
+
+  limiter->limiterInit();
+  limiter->limiterUpdate();
+
+  numeric->FluxNumeric();
+  BoundaryConditions();
+  ZeroRes();
+  PeriodicCons(rhs);
+
+  double fac = param.stageCoeff[irk] * param.CFL;
+  for (int i = 0; i < geom.phyNodes; ++i) {
+    double adtv = fac * timeSteps[i] / geom.vol[i];
+    rhs[i].dens *= adtv;
+    rhs[i].xmom *= adtv;
+    rhs[i].ymom *= adtv;
+    rhs[i].ener *= adtv;
+  }
+}
+
+void FVMSolver::assignCVold() { cvOld = cv; }
+
+void FVMSolver::updateCV() {
+  for (int i = 0; i < geom.phyNodes; ++i) {
+    cv[i].dens = cvOld[i].dens - rhs[i].dens;
+    cv[i].xmom = cvOld[i].xmom - rhs[i].xmom;
+    cv[i].ymom = cvOld[i].ymom - rhs[i].ymom;
+    cv[i].ener = cvOld[i].ener - rhs[i].ener;
   }
 }
 }  // namespace solver

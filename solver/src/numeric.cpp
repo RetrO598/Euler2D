@@ -24,22 +24,31 @@ BaseNumeric::BaseNumeric(const preprocess::parameter &param,
       gradx(gradx),
       grady(grady) {}
 
-void BaseNumeric::DissipInit(const int &irk, const double &beta) {
-  if (irk == 0 || beta > 0.99) {
-    for (int i = 0; i < geom.phyNodes; ++i) {
-      diss[i].dens = 0.0;
-      diss[i].xmom = 0.0;
-      diss[i].ymom = 0.0;
-      diss[i].ener = 0.0;
-    }
-  } else {
-    double blend = 1.0 - beta;
-    for (int i = 0; i < geom.phyNodes; ++i) {
-      diss[i].dens *= blend;
-      diss[i].xmom *= blend;
-      diss[i].ymom *= blend;
-      diss[i].ener *= blend;
-    }
+// void BaseNumeric::DissipInit(const int &irk, const double &beta) {
+//   if (irk == 0 || beta > 0.99) {
+//     for (int i = 0; i < geom.phyNodes; ++i) {
+//       diss[i].dens = 0.0;
+//       diss[i].xmom = 0.0;
+//       diss[i].ymom = 0.0;
+//       diss[i].ener = 0.0;
+//     }
+//   } else {
+//     double blend = 1.0 - beta;
+//     for (int i = 0; i < geom.phyNodes; ++i) {
+//       diss[i].dens *= blend;
+//       diss[i].xmom *= blend;
+//       diss[i].ymom *= blend;
+//       diss[i].ener *= blend;
+//     }
+//   }
+// }
+
+void BaseNumeric::DissipInit() {
+  for (int i = 0; i < geom.phyNodes; ++i) {
+    diss[i].dens = 0.0;
+    diss[i].xmom = 0.0;
+    diss[i].ymom = 0.0;
+    diss[i].ener = 0.0;
   }
 }
 

@@ -14,7 +14,9 @@ class BaseNumeric {
               std::vector<CONS_VAR> &rhs, std::vector<PRIM_VAR> &lim,
               std::vector<PRIM_VAR> &gradx, std::vector<PRIM_VAR> &grady);
 
-  void DissipInit(const int &irk, const double &beta);
+  // void DissipInit(const int &irk, const double &beta);
+
+  void DissipInit();
 
   void FluxWalls();
 

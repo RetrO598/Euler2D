@@ -7,8 +7,8 @@
 #include <solver/variableDef.h>
 
 #include <memory>
-#include <vector>
 #include <string>
+#include <vector>
 
 // Forward-declarations for friend function signature
 namespace preprocess {
@@ -21,18 +21,18 @@ class FVMSolver;
 }
 
 namespace io {
-void writeVTKFile(const std::string& filename,
-                  const preprocess::MeshData<2>& mesh,
-                  const solver::FVMSolver& solver);
-} // namespace io
-
+void writeVTKFile(const std::string &filename,
+                  const preprocess::MeshData<2> &mesh,
+                  const solver::FVMSolver &solver);
+}  // namespace io
 
 namespace solver {
 
 class FVMSolver {
   // Grant VTK writer access to private solution data (cv, timeSteps)
-  friend void io::writeVTKFile(const std::string&, const preprocess::MeshData<2>&,
-                             const solver::FVMSolver&);
+  friend void io::writeVTKFile(const std::string &,
+                               const preprocess::MeshData<2> &,
+                               const solver::FVMSolver &);
 
  public:
   FVMSolver(preprocess::parameter &parameter,
@@ -64,9 +64,9 @@ class FVMSolver {
   void PeriodicInt(std::vector<int> &var);
   void PeriodicVisc(std::vector<double> &gradTx, std::vector<double> &gradTy);
 
-  void fluxVisc(double beta);
+  void fluxVisc();
 
-  void solve();
+  // void solve();
 
   void Timestep();
 
@@ -80,6 +80,10 @@ class FVMSolver {
 
   void Forces();
   void MassFlow();
+
+  void updateResidualRK(int irk);
+  void assignCVold();
+  void updateCV();
 
   inline bool Converged() {
     if (iter >= param.maxIteration || drho <= param.convTol) {
