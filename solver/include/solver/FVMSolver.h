@@ -9,6 +9,8 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <xtensor.hpp>
+#include <xtensor/core/xtensor_forward.hpp>
 
 // Forward-declarations for friend function signature
 namespace preprocess {
@@ -95,6 +97,8 @@ class FVMSolver {
   void writeTecplotDat();
   void writeLineDat();
 
+  void computeWaveSpeed();
+
   preprocess::parameter &param;
   const preprocess::Geometry &geom;
   std::unique_ptr<BaseLimiter> limiter;
@@ -126,6 +130,10 @@ class FVMSolver {
   std::vector<CONS_VAR> rhsIter;
   std::vector<CONS_VAR> rhsOld;
   std::vector<int> nContr;
+
+  // For LU-SGS time integrator
+  std::vector<double> diag;
+  std::vector<double> waveSpeed;
 
   double cl;
   double cd;

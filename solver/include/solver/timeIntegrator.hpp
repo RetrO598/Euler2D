@@ -18,4 +18,13 @@ class RungeKuttaTimeIntegrator : public TimeIntegrator {
   FVMSolver& solver;
 };
 
+class LUSGSIntegrator : public TimeIntegrator {
+ public:
+  LUSGSIntegrator(FVMSolver& solver);
+  void timeAdvance() override;
+  ~LUSGSIntegrator() = default;
+
+ private:
+  FVMSolver& solver;
+};
 }  // namespace solver

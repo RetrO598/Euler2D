@@ -2,12 +2,14 @@
 #include <pre/macro.h>
 #include <pre/reader.h>
 
+#include <algorithm>
 #include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
 #include "element/element_concept.hpp"
+#include "grid/point.hpp"
 #include "pre/parameter.h"
 namespace preprocess {
 
@@ -17,6 +19,7 @@ class Geometry {
 
   std::vector<Tria> tria;
   std::vector<ElementHandle> elements;
+  std::vector<Point<2>> pointList;
   std::vector<Edge2D> edge;
   std::vector<BoundaryFace> boundaryFace;
   std::vector<idBoundary> ibound;
@@ -51,6 +54,7 @@ class Geometry {
     this->vol = std::move(geometry.vol);
     this->numElems = geometry.numElems;
     this->elements = std::move(geometry.elements);
+    this->pointList = std::move(geometry.pointList);
   };
   Geometry &operator=(const Geometry &geomtry) = delete;
   Geometry &operator=(Geometry &&geometry) {
@@ -72,6 +76,7 @@ class Geometry {
     this->vol = std::move(geometry.vol);
     this->numElems = geometry.numElems;
     this->elements = std::move(geometry.elements);
+    this->pointList = std::move(geometry.pointList);
     return *this;
   };
 

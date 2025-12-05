@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <cstdlib>
 #include <memory>
 #include <vector>
@@ -38,6 +39,8 @@ FVMSolver::FVMSolver(preprocess::parameter &parameter,
     gradTy.resize(0);
     dvlam.resize(0);
   }
+
+  diag.resize(nNodes);
 
   dv.resize(nNodes);
 
@@ -225,4 +228,6 @@ void FVMSolver::updateCV() {
     cv[i].ener = cvOld[i].ener - rhs[i].ener;
   }
 }
+
+void FVMSolver::computeWaveSpeed() {}
 }  // namespace solver

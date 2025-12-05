@@ -2,7 +2,7 @@
 #include "solver/timeIntegrator.hpp"
 namespace solver {
 
-RungeKuttaTimeIntegrator::RungeKuttaTimeIntegrator(FVMSolver &solver)
+RungeKuttaTimeIntegrator::RungeKuttaTimeIntegrator(FVMSolver& solver)
     : solver(solver) {}
 
 void RungeKuttaTimeIntegrator::timeAdvance() {
@@ -24,4 +24,8 @@ void RungeKuttaTimeIntegrator::timeAdvance() {
     solver.WallVisc();
   }
 }
+
+LUSGSIntegrator::LUSGSIntegrator(FVMSolver& solver) : solver(solver) {}
+
+void LUSGSIntegrator::timeAdvance() {}
 }  // namespace solver

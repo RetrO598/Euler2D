@@ -177,6 +177,8 @@ Geometry MeshData<DIM>::changeTo2Dgeometry(
     }
   }
 
+  geometry.pointList = PointList;
+
   geometry.sproj.resize(geometry.phyNodes);
   geometry.CheckMetrics();
   geometry.FaceVectorsSymm();
