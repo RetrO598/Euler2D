@@ -4,6 +4,7 @@
 #include <yaml-cpp/node/parse.h>
 
 #include <cmath>
+#include <cstdlib>
 #include <fstream>
 #include <iostream>
 #include <regex>
@@ -344,16 +345,51 @@ void yamlReader::read(parameter& param) {
 
   // 数值控制
   auto num = get("numerical_parameters");
+  std::string timeScheme = num["time_scheme"].as<std::string>();
+
+  if (timeScheme == "RK") {
+    param.temporalScheme = TemporalScheme::RungeKutta;
+  } else if (timeScheme == "LUSGS") {
+    param.temporalScheme = TemporalScheme::LUSGS;
+  } else {
+    std::cerr << "unknown temporal scheme: " << timeScheme << "\n";
+    exit(1);
+  }
+
+  param.lusgsParameter = num["lusgs_overrelaxation"].as<double>();
+  std::string convecScheme = num["convection_scheme"].as<std::string>();
+
+  if (convecScheme == "ROE") {
+    param.convecScheme = ConvectionScheme::ROE;
+  } else if (convecScheme == "SLAU2") {
+    param.convecScheme = ConvectionScheme::SLAU2;
+  } else if (convecScheme == "AUSM") {
+    param.convecScheme = ConvectionScheme::AUSM;
+  } else if (convecScheme == "AUSMUP2") {
+    param.convecScheme = ConvectionScheme::AUSMUP2;
+  } else {
+    std::cerr << "unknown convection scheme: " << convecScheme << "\n";
+    exit(1);
+  }
+
   param.CFL = num["cfl"].as<double>();
   param.imResiSmooth = num["smoothing_coeff"].as<double>();
   param.numOfIterSmooth = num["smoothing_jacobi_iters"].as<int>();
 
   std::string tstep = num["time_stepping"].as<std::string>();
+
+  std::string limiter = num["limiter"].as<std::string>();
+  if (limiter == "Venkatakrishnan") {
+    param.limiterType = Limiter::VenkataKrishnan;
+  } else if (limiter == "NishikawaR3") {
+    param.limiterType = Limiter::NishikawaR3;
+  } else {
+    std::cerr << "unknown limiter type: " << limiter << "\n";
+    exit(1);
+  }
+
   param.timestep_ = (tstep == "L" ? timeStep::local : timeStep::global);
 
-  param.preCon = num["low_mach_preconditioning"].as<bool>();
-  param.preConFactor = num["preconditioning_K"].as<double>();
-  param.spatialOrder = num["roe_order"].as<int>();
   param.limiterCoeff = num["limiter_coefficient"].as<double>();
   param.entropyCorreRoe = num["entropy_fix_coefficient"].as<double>();
   param.farCorrect = num["vortex_farfield_correction"].as<bool>();

@@ -1,70 +1,70 @@
-title: "NACA 0012 airfoil; transonic flow (SU2 mesh)"
+title: "Inviscid Bump in a Channel"
 
 files:
-  grid_file: "mesh_NACA0012_INV.su2"
-  flow_field: "n0012_su2_iso"
-  surface_quantities: "n0012_su2_surf"
-  convergence_history: "n0012_su2_conv"
+  grid_file: "mesh_channel_256x128.su2"
+  flow_field: "channel_iso"      # Output with .v2d and 5-digit iteration number
+  surface_quantities: "channel_surf"  # Output with .v2d and 5-digit iteration number
+  convergence_history: "channel_conv" # Output with .v2d
   restart_in: "solin"
   restart_out: "solout"
 
 physics:
   general:
-    flow_type: "E"               # E=external flow, I=internal flow
+    flow_type: "I"               # E=external flow, I=internal flow
     equation_type: "E"           # E=Euler, N=Navier-Stokes
     gamma: 1.4                   # Ratio of specific heats
     cp: 1004.5                   # Specific heat at constant pressure [J/kgK]
     reynolds_number: 5000.0
-    reference_velocity: 0.0
-    reference_density: 0.0
+    reference_velocity: 223.1
+    reference_density: 0.936
     prandtl_number: 0.72
 
   external_flow:
-    mach: 0.8
-    angle_of_attack: 1.25        # Degrees
-    static_pressure: 1.0e5       # [Pa]
-    static_temperature: 288.0    # [K]
+    mach: 0.0
+    angle_of_attack: 0.0        # Degrees
+    static_pressure: 0.0       # [Pa]
+    static_temperature: 0.0    # [K]
 
   internal_flow:
-    total_pressure_inlet: 0.0
-    total_temperature_inlet: 0.0
+    total_pressure_inlet: 140513.23
+    total_temperature_inlet: 316.224
     flow_angle_inlet: 0.0
-    static_pressure_outlet: 0.0
+    static_pressure_outlet: 101300.0
     flow_angle_outlet: 0.0
     pressure_ratio_inlet_outlet: 1.0
 
 boundary_condition:
-  Inflow: []
-  Outflow: []
-  Farfield: ["farfield"]
-  EulerWall: ["airfoil"]
+  Inflow: ["inlet"]
+  Outflow: ["outlet"]
+  Farfield: []
+  EulerWall: ["upper_wall", "lower_wall"]
   NoSlipWall: []
   Periodic: []
   Symmetric: [] 
 
 geometry_reference:
-  x_ref: 0.25                    # Moment coefficient reference [m]
+  x_ref: 1.5                     # Moment coefficient reference [m]
   y_ref: 0.0
   chord_length: 1.0              # Reference length [m]
 
 iteration_control:
-  max_iterations: 5000
+  max_iterations: 50000
   dump_frequency: 99999
   tolerance: 1.0e-5
   restart: "N"                   # Use previous solution for restart (Y/N)
 
 numerical_parameters:
   time_scheme: LUSGS             # LUSGS / RK
-  lusgs_overrelaxation: 1.1      # overrelaxation parameter in LUSGS
-  convection_scheme: ROE         # ROE/SLAU2/AUSM/AUSMUP2
-  cfl: 400
+  lusgs_overrelaxation: 1.5      # overrelaxation parameter in LUSGS
+  convection_scheme: SLAU2         # ROE/SLAU2/AUSM/AUSMUP2
+  cfl: 20.0
   smoothing_coeff: 0.4
   smoothing_jacobi_iters: 2
   time_stepping: "L"             # L=local, G=global
   limiter: NishikawaR3       # VenkatakrishnanLimiter/NishikawaR3
-  limiter_coefficient: 5.0
+  limiter_coefficient: 3.0
   entropy_fix_coefficient: 0.05
-  vortex_farfield_correction: "Y"
+  vortex_farfield_correction: "N"
   stages: 5
   stage_coefficients: [0.0695, 0.1602, 0.2898, 0.5060, 1.000]
   dissipation_blending: [1.0, 1.0, 1.0, 1.0, 1.0]
@@ -75,12 +75,12 @@ plot_quantities:
   u_velocity: true
   v_velocity: true
   static_pressure: true
-  total_pressure: false
+  total_pressure: true
   static_temperature: true
-  total_temperature: false
+  total_temperature: true
   local_mach: true
-  isentropic_mach: false
-  total_pressure_loss: false
+  isentropic_mach: true
+  total_pressure_loss: true
   laminar_viscosity: false
   skin_friction_coefficient: false
   pressure_coefficient: false

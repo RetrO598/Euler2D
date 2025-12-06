@@ -14,7 +14,7 @@ void FVMSolver::DensityChange(double &drho, double &drmax, int &idrmax) {
   drmax = 0.0;
   idrmax = 0;
   for (i = 0; i < geom.phyNodes; i++) {
-    dr = cv[i].dens - cvOld[i].dens;
+    dr = (cv[i].dens - cvOld[i].dens);
     drho += dr * dr;
     if (std::abs(dr) >= drmax) {
       drmax = std::abs(dr);
@@ -23,6 +23,7 @@ void FVMSolver::DensityChange(double &drho, double &drmax, int &idrmax) {
   }
 
   drho = std::sqrt(drho);
+  // drho = drmax;
 }
 
 void FVMSolver::Convergence() {

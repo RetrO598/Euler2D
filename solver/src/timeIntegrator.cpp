@@ -27,5 +27,20 @@ void RungeKuttaTimeIntegrator::timeAdvance() {
 
 LUSGSIntegrator::LUSGSIntegrator(FVMSolver& solver) : solver(solver) {}
 
-void LUSGSIntegrator::timeAdvance() {}
+void LUSGSIntegrator::timeAdvance() {
+  solver.assignCVold();
+  solver.Timestep();
+  solver.computeWaveSpeed();
+  solver.computeJacobianDiag(solver.param.lusgsParameter);
+  solver.computeResidualLUSGS();
+  if (solver.param.imResiSmooth > 0.0) {
+    solver.Irsmoo();
+    solver.ZeroRes();
+  }
+  solver.lowerSweep();
+  solver.upperSweep();
+  solver.LUSGSupdate();
+  solver.ConvToDependAll();
+  solver.WallVisc();
+}
 }  // namespace solver

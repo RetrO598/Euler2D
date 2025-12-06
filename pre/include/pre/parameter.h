@@ -16,6 +16,12 @@ enum class BoundaryType {
   Symmetric
 };
 
+enum class ConvectionScheme { ROE, SLAU2, AUSM, AUSMUP2 };
+
+enum class TemporalScheme { RungeKutta, LUSGS };
+
+enum class Limiter { VenkataKrishnan, NishikawaR3 };
+
 enum class flowType { Internal, External };
 
 enum class equationType { Euler, NavierStokes };
@@ -71,6 +77,10 @@ struct parameter {
   bool restart;
 
   // Numerical parameter
+  ConvectionScheme convecScheme;
+  double lusgsParameter;
+  TemporalScheme temporalScheme;
+  Limiter limiterType;
   double CFL, imResiSmooth;
   int numOfIterSmooth;
   timeStep timestep_;

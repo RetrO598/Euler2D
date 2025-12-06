@@ -54,13 +54,14 @@ iteration_control:
   restart: "N"                   # Use previous solution for restart (Y/N)
 
 numerical_parameters:
+  time_scheme: RK             # LUSGS / RK
+  lusgs_overrelaxation: 1.1      # overrelaxation parameter in LUSGS
+  convection_scheme: ROE         # ROE/SLAU2/AUSM/AUSMUP2
   cfl: 5.5
   smoothing_coeff: 0.4
   smoothing_jacobi_iters: 2
   time_stepping: "L"             # L=local, G=global
-  low_mach_preconditioning: "N"
-  preconditioning_K: 0.15
-  roe_order: 2
+  limiter: Venkatakrishnan       # VenkatakrishnanLimiter/NishikawaR3
   limiter_coefficient: 0.1
   entropy_fix_coefficient: 0.05
   vortex_farfield_correction: "N"

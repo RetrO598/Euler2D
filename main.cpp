@@ -55,14 +55,34 @@ int main(int argc, char *argv[]) {
   solver.limiter->limiterRefVals();
   solver.iter = 0;
 
-  solver::RungeKuttaTimeIntegrator integrator(solver);
+  if (param.temporalScheme == preprocess::TemporalScheme::LUSGS) {
+    std::cout << "using LUSGS temporal scheme." << "\n";
+    solver::LUSGSIntegrator integrator(solver);
+    solver.computeWaveSpeed();
+    do {
+      solver.iter++;
+      integrator.timeAdvance();
+      solver.Convergence();
+    } while (!solver.Converged());
+  } else if (param.temporalScheme == preprocess::TemporalScheme::RungeKutta) {
+    std::cout << "using RungeKutta temporal scheme." << "\n";
+    solver::RungeKuttaTimeIntegrator integrator(solver);
 
-  do {
-    solver.iter++;
-    integrator.timeAdvance();
-    // solver.solve();
-    solver.Convergence();
-  } while (!solver.Converged());
+    solver.computeWaveSpeed();
+    do {
+      solver.iter++;
+      integrator.timeAdvance();
+      solver.Convergence();
+    } while (!solver.Converged());
+  }
+
+  // solver.computeWaveSpeed();
+  // do {
+  //   solver.iter++;
+  //   integrator.timeAdvance();
+  //   // solver.solve();
+  //   solver.Convergence();
+  // } while (!solver.Converged());
 
   // solver.writeTecplotDat();
   // solver.writeLineDat();

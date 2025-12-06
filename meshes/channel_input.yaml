@@ -1,7 +1,7 @@
 title: "Channel with 10% circular bump; transonic flow"
 
 files:
-  grid_file: "channel.ugr"
+  grid_file: "channel.su2"
   flow_field: "channel_iso"      # Output with .v2d and 5-digit iteration number
   surface_quantities: "channel_surf"  # Output with .v2d and 5-digit iteration number
   convergence_history: "channel_conv" # Output with .v2d
@@ -50,17 +50,18 @@ geometry_reference:
 iteration_control:
   max_iterations: 3000
   dump_frequency: 99999
-  tolerance: 1.0e-5
+  tolerance: 1.0e-10
   restart: "N"                   # Use previous solution for restart (Y/N)
 
 numerical_parameters:
-  cfl: 5.5
+  time_scheme: LUSGS             # LUSGS / RK
+  lusgs_overrelaxation: 1.1      # overrelaxation parameter in LUSGS
+  convection_scheme: ROE         # ROE/SLAU2/AUSM/AUSMUP2
+  cfl: 50.0
   smoothing_coeff: 0.4
   smoothing_jacobi_iters: 2
   time_stepping: "L"             # L=local, G=global
-  low_mach_preconditioning: "N"
-  preconditioning_K: 0.15
-  roe_order: 2
+  limiter: Venkatakrishnan       # VenkatakrishnanLimiter/NishikawaR3
   limiter_coefficient: 0.1
   entropy_fix_coefficient: 0.05
   vortex_farfield_correction: "N"

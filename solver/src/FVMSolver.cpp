@@ -5,11 +5,14 @@
 #include <solver/variableDef.h>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstddef>
 #include <cstdlib>
 #include <memory>
 #include <vector>
+
+#include "solver/timeIntegrator.hpp"
 
 namespace solver {
 
@@ -41,16 +44,40 @@ FVMSolver::FVMSolver(preprocess::parameter &parameter,
   }
 
   diag.resize(nNodes);
+  intermediateSol.resize(nNodes);
+  increment.resize(nNodes);
 
   dv.resize(nNodes);
 
   cl = 0.0;
 
-  limiter = std::make_unique<VenkatakrishnanLimiter>(param, geom, cv, dv, umin,
-                                                     umax, lim, gradx, grady);
-
-  numeric = std::make_unique<NumericAUSMUP2>(param, geom, cv, dv, diss, rhs,
+  if (param.convecScheme == preprocess::ConvectionScheme::ROE) {
+    std::cout << "using ROE scheme." << "\n";
+    numeric = std::make_unique<NumericRoe>(param, geom, cv, dv, diss, rhs, lim,
+                                           gradx, grady);
+  } else if (param.convecScheme == preprocess::ConvectionScheme::SLAU2) {
+    std::cout << "using SLAU2 scheme." << "\n";
+    numeric = std::make_unique<NumericSLAU2>(param, geom, cv, dv, diss, rhs,
                                              lim, gradx, grady);
+  } else if (param.convecScheme == preprocess::ConvectionScheme::AUSM) {
+    std::cout << "using AUSM scheme." << "\n";
+    numeric = std::make_unique<NumericAUSM>(param, geom, cv, dv, diss, rhs, lim,
+                                            gradx, grady);
+  } else if (param.convecScheme == preprocess::ConvectionScheme::AUSMUP2) {
+    std::cout << "using AUSMUP2 scheme." << "\n";
+    numeric = std::make_unique<NumericAUSMUP2>(param, geom, cv, dv, diss, rhs,
+                                               lim, gradx, grady);
+  }
+
+  if (param.limiterType == preprocess::Limiter::VenkataKrishnan) {
+    std::cout << "using VenkataKrishnan limiter." << "\n";
+    limiter = std::make_unique<VenkatakrishnanLimiter>(
+        param, geom, cv, dv, umin, umax, lim, gradx, grady);
+  } else if (param.limiterType == preprocess::Limiter::NishikawaR3) {
+    std::cout << "using NishikawaR3 limiter." << "\n";
+    limiter = std::make_unique<NishikawaR3>(param, geom, cv, dv, umin, umax,
+                                            lim, gradx, grady);
+  }
 
   rhsIter.reserve(nNodes);
   rhsOld.reserve(nNodes);
@@ -229,5 +256,214 @@ void FVMSolver::updateCV() {
   }
 }
 
-void FVMSolver::computeWaveSpeed() {}
+void FVMSolver::computeWaveSpeed() {
+  std::size_t sum = 0;
+  for (auto &i : geom.pointList) {
+    sum += i.getnPoint();
+  }
+
+  waveSpeed.resize(sum);
+  waveSpeedJ.resize(sum);
+
+  std::size_t index = 0;
+  for (std::size_t iPoint = 0; iPoint < geom.pointList.size(); ++iPoint) {
+    for (std::size_t j = 0; j < geom.pointList[iPoint].getnPoint(); ++j) {
+      auto jPoint = geom.pointList[iPoint].getPoint(j);
+      auto jEdge = geom.pointList[iPoint].getEdge(j);
+
+      double sx = geom.sij[jEdge].x;
+      double sy = geom.sij[jEdge].y;
+
+      double ds = std::sqrt(sx * sx + sy * sy);
+
+      double nx = sx / ds;
+      double ny = sy / ds;
+
+      double velx = 0.5 * (cv[iPoint].xmom / cv[iPoint].dens +
+                           cv[jPoint].xmom / cv[jPoint].dens);
+      double vely = 0.5 * (cv[iPoint].ymom / cv[iPoint].dens +
+                           cv[jPoint].ymom / cv[jPoint].dens);
+
+      double cs = 0.5 * (dv[iPoint].cs + dv[jPoint].cs);
+
+      double wavespeed = (std::abs(velx * nx + vely * ny) + cs) * ds;
+
+      double uj = cv[jPoint].xmom / cv[jPoint].dens;
+      double vj = cv[jPoint].ymom / cv[jPoint].dens;
+
+      double wavespeedj = (std::abs(uj * nx + vj * ny) + dv[jPoint].cs) * ds;
+
+      waveSpeedJ[index] = wavespeedj;
+      waveSpeed[index] = wavespeed;
+      index++;
+    }
+  }
+}
+
+void FVMSolver::computeJacobianDiag(double factor) {
+  std::size_t index = 0;
+  for (std::size_t iPoint = 0; iPoint < geom.pointList.size(); ++iPoint) {
+    diag[iPoint] = geom.vol[iPoint] / (timeSteps[iPoint] * param.CFL);
+    for (std::size_t j = 0; j < geom.pointList[iPoint].getnPoint(); ++j) {
+      double lambda = waveSpeed[index] * factor;
+      waveSpeed[index] = lambda;
+      diag[iPoint] += 0.5 * lambda;
+      index++;
+    }
+  }
+}
+
+void FVMSolver::lowerSweep() {
+  CONS_VAR df{0.0, 0.0, 0.0, 0.0};
+
+  std::size_t index = 0;
+  for (std::size_t iPoint = 0; iPoint < geom.pointList.size(); ++iPoint) {
+    df = {0.0, 0.0, 0.0, 0.0};
+    for (std::size_t ineighbor = 0;
+         ineighbor < geom.pointList[iPoint].getnPoint(); ++ineighbor) {
+      std::size_t jPoint = geom.pointList[iPoint].getPoint(ineighbor);
+      std::size_t jEdge = geom.pointList[iPoint].getEdge(ineighbor);
+
+      if (jPoint < iPoint) {
+        CONS_VAR sol = cv[jPoint];
+        CONS_VAR dSol;
+        dSol.dens = sol.dens + intermediateSol[jPoint].dens;
+        dSol.xmom = sol.xmom + intermediateSol[jPoint].xmom;
+        dSol.ymom = sol.ymom + intermediateSol[jPoint].ymom;
+        dSol.ener = sol.ener + intermediateSol[jPoint].ener;
+
+        double sx, sy, nx, ny, gamma;
+
+        sx = geom.sij[jEdge].x;
+        sy = geom.sij[jEdge].y;
+        double ds = std::sqrt(sx * sx + sy * sy);
+        nx = sx / ds;
+        ny = sy / ds;
+
+        if (geom.edge[jEdge].nodei == jPoint) {
+          nx = -nx;
+          ny = -ny;
+        }
+
+        gamma = dv[jPoint].gamma;
+
+        auto f = fluxDifference::computeDifference(sol, nx, ny, gamma);
+        auto dfj = fluxDifference::computeDifference(dSol, nx, ny, gamma);
+
+        dfj.dens -= f.dens;
+        dfj.xmom -= f.xmom;
+        dfj.ymom -= f.ymom;
+        dfj.ener -= f.ener;
+
+        df.dens +=
+            (dfj.dens * ds - waveSpeed[index] * intermediateSol[jPoint].dens);
+        df.xmom +=
+            (dfj.xmom * ds - waveSpeed[index] * intermediateSol[jPoint].xmom);
+        df.ymom +=
+            (dfj.ymom * ds - waveSpeed[index] * intermediateSol[jPoint].ymom);
+        df.ener +=
+            (dfj.ener * ds - waveSpeed[index] * intermediateSol[jPoint].ener);
+      }
+      index++;
+    }
+
+    intermediateSol[iPoint].dens =
+        (-rhs[iPoint].dens - 0.5 * df.dens) / diag[iPoint];
+    intermediateSol[iPoint].xmom =
+        (-rhs[iPoint].xmom - 0.5 * df.xmom) / diag[iPoint];
+    intermediateSol[iPoint].ymom =
+        (-rhs[iPoint].ymom - 0.5 * df.ymom) / diag[iPoint];
+    intermediateSol[iPoint].ener =
+        (-rhs[iPoint].ener - 0.5 * df.ener) / diag[iPoint];
+  }
+}
+
+void FVMSolver::upperSweep() {
+  CONS_VAR df{0.0, 0.0, 0.0, 0.0};
+
+  std::size_t index = waveSpeed.size();
+  for (int iPoint = geom.pointList.size() - 1; iPoint > -1; --iPoint) {
+    df = {0.0, 0.0, 0.0, 0.0};
+    for (int ineighbor = geom.pointList[iPoint].getnPoint() - 1; ineighbor > -1;
+         --ineighbor) {
+      index--;
+      std::size_t jPoint = geom.pointList[iPoint].getPoint(ineighbor);
+      std::size_t jEdge = geom.pointList[iPoint].getEdge(ineighbor);
+
+      if (jPoint > iPoint) {
+        CONS_VAR sol = cv[jPoint];
+        CONS_VAR dSol;
+        dSol.dens = sol.dens + increment[jPoint].dens;
+        dSol.xmom = sol.xmom + increment[jPoint].xmom;
+        dSol.ymom = sol.ymom + increment[jPoint].ymom;
+        dSol.ener = sol.ener + increment[jPoint].ener;
+
+        double sx, sy, nx, ny, gamma;
+
+        sx = geom.sij[jEdge].x;
+        sy = geom.sij[jEdge].y;
+        double ds = std::sqrt(sx * sx + sy * sy);
+        nx = sx / ds;
+        ny = sy / ds;
+
+        if (geom.edge[jEdge].nodei == jPoint) {
+          nx = -nx;
+          ny = -ny;
+        }
+
+        gamma = dv[jPoint].gamma;
+
+        auto f = fluxDifference::computeDifference(sol, nx, ny, gamma);
+        auto dfj = fluxDifference::computeDifference(dSol, nx, ny, gamma);
+
+        dfj.dens -= f.dens;
+        dfj.xmom -= f.xmom;
+        dfj.ymom -= f.ymom;
+        dfj.ener -= f.ener;
+
+        df.dens += (dfj.dens * ds - waveSpeed[index] * increment[jPoint].dens);
+        df.xmom += (dfj.xmom * ds - waveSpeed[index] * increment[jPoint].xmom);
+        df.ymom += (dfj.ymom * ds - waveSpeed[index] * increment[jPoint].ymom);
+        df.ener += (dfj.ener * ds - waveSpeed[index] * increment[jPoint].ener);
+      }
+    }
+
+    increment[iPoint].dens =
+        intermediateSol[iPoint].dens - 0.5 * df.dens / diag[iPoint];
+    increment[iPoint].xmom =
+        intermediateSol[iPoint].xmom - 0.5 * df.xmom / diag[iPoint];
+    increment[iPoint].ymom =
+        intermediateSol[iPoint].ymom - 0.5 * df.ymom / diag[iPoint];
+    increment[iPoint].ener =
+        intermediateSol[iPoint].ener - 0.5 * df.ener / diag[iPoint];
+  }
+}
+
+void FVMSolver::LUSGSupdate() {
+  for (std::size_t i = 0; i < geom.phyNodes; ++i) {
+    cv[i].dens += increment[i].dens;
+    cv[i].xmom += increment[i].xmom;
+    cv[i].ymom += increment[i].ymom;
+    cv[i].ener += increment[i].ener;
+  }
+}
+
+void FVMSolver::computeResidualLUSGS() {
+  numeric->DissipInit();
+
+  if (param.equationtype_ == preprocess::equationType::NavierStokes) {
+    GradientsVisc();
+    fluxVisc();
+  } else if (param.equationtype_ == preprocess::equationType::Euler) {
+    Gradients();
+  }
+
+  limiter->limiterInit();
+  limiter->limiterUpdate();
+
+  numeric->FluxNumeric();
+  BoundaryConditions();
+  ZeroRes();
+  PeriodicCons(rhs);
+}
 }  // namespace solver

@@ -98,6 +98,11 @@ class FVMSolver {
   void writeLineDat();
 
   void computeWaveSpeed();
+  void computeJacobianDiag(double factor);
+  void lowerSweep();
+  void upperSweep();
+  void LUSGSupdate();
+  void computeResidualLUSGS();
 
   preprocess::parameter &param;
   const preprocess::Geometry &geom;
@@ -134,6 +139,9 @@ class FVMSolver {
   // For LU-SGS time integrator
   std::vector<double> diag;
   std::vector<double> waveSpeed;
+  std::vector<double> waveSpeedJ;
+  std::vector<CONS_VAR> intermediateSol;
+  std::vector<CONS_VAR> increment;
 
   double cl;
   double cd;
