@@ -139,7 +139,7 @@ class FVMSolver {
   // For LU-SGS time integrator
   std::vector<double> diag;
   std::vector<double> waveSpeed;
-  std::vector<double> waveSpeedJ;
+  std::vector<double> eigenVisc;
   std::vector<CONS_VAR> intermediateSol;
   std::vector<CONS_VAR> increment;
 

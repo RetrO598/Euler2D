@@ -2,9 +2,12 @@
 
 #include <cmath>
 
+#include "pre/parameter.h"
+
 namespace solver {
 void FVMSolver::Timestep() {
-  if (param.equationtype_ == preprocess::equationType::Euler) {
+  if (param.equationtype_ == preprocess::equationType::Euler ||
+      param.temporalScheme == preprocess::TemporalScheme::LUSGS) {
     for (int i = 0; i < geom.phyNodes; ++i) {
       double sx = geom.sproj[i].x;
       double sy = geom.sproj[i].y;

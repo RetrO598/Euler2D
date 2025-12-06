@@ -5,7 +5,6 @@
 #include <solver/variableDef.h>
 
 #include <algorithm>
-#include <array>
 #include <cmath>
 #include <cstddef>
 #include <cstdlib>
@@ -263,7 +262,7 @@ void FVMSolver::computeWaveSpeed() {
   }
 
   waveSpeed.resize(sum);
-  waveSpeedJ.resize(sum);
+  eigenVisc.resize(sum);
 
   std::size_t index = 0;
   for (std::size_t iPoint = 0; iPoint < geom.pointList.size(); ++iPoint) {
@@ -291,10 +290,17 @@ void FVMSolver::computeWaveSpeed() {
       double uj = cv[jPoint].xmom / cv[jPoint].dens;
       double vj = cv[jPoint].ymom / cv[jPoint].dens;
 
-      double wavespeedj = (std::abs(uj * nx + vj * ny) + dv[jPoint].cs) * ds;
-
-      waveSpeedJ[index] = wavespeedj;
       waveSpeed[index] = wavespeed;
+
+      if (param.equationtype_ == preprocess::equationType::NavierStokes) {
+        double rhoAve = 0.5 * (cv[iPoint].dens + cv[jPoint].dens);
+        double gammaAve = 0.5 * (dv[iPoint].gamma + dv[jPoint].gamma);
+        double mue = 0.5 * (dvlam[iPoint].mu / param.Prandtl +
+                            dvlam[jPoint].mu / param.Prandtl);
+        double f1 = std::max(4.0 / 3.0 / rhoAve, gammaAve / rhoAve);
+        double eigen = f1 * mue;
+        eigenVisc[index] = eigen * ds * ds;
+      }
       index++;
     }
   }
@@ -308,6 +314,9 @@ void FVMSolver::computeJacobianDiag(double factor) {
       double lambda = waveSpeed[index] * factor;
       waveSpeed[index] = lambda;
       diag[iPoint] += 0.5 * lambda;
+      if (param.equationtype_ == preprocess::equationType::NavierStokes) {
+        diag[iPoint] += eigenVisc[index] / geom.vol[iPoint];
+      }
       index++;
     }
   }
@@ -355,14 +364,21 @@ void FVMSolver::lowerSweep() {
         dfj.ymom -= f.ymom;
         dfj.ener -= f.ener;
 
-        df.dens +=
-            (dfj.dens * ds - waveSpeed[index] * intermediateSol[jPoint].dens);
-        df.xmom +=
-            (dfj.xmom * ds - waveSpeed[index] * intermediateSol[jPoint].xmom);
-        df.ymom +=
-            (dfj.ymom * ds - waveSpeed[index] * intermediateSol[jPoint].ymom);
-        df.ener +=
-            (dfj.ener * ds - waveSpeed[index] * intermediateSol[jPoint].ener);
+        double ra = waveSpeed[index];
+        if (param.equationtype_ == preprocess::equationType::NavierStokes) {
+          double iPointx = geom.pointList[iPoint].getCoord(0);
+          double iPointy = geom.pointList[iPoint].getCoord(1);
+          double jPointx = geom.pointList[jPoint].getCoord(0);
+          double jPointy = geom.pointList[jPoint].getCoord(1);
+          double length = std::sqrt((jPointx - iPointx) * (jPointx - iPointx) +
+                                    (jPointy - iPointy) * (jPointy - iPointy));
+          ra += eigenVisc[index] / ds / length;
+        }
+
+        df.dens += (dfj.dens * ds - ra * intermediateSol[jPoint].dens);
+        df.xmom += (dfj.xmom * ds - ra * intermediateSol[jPoint].xmom);
+        df.ymom += (dfj.ymom * ds - ra * intermediateSol[jPoint].ymom);
+        df.ener += (dfj.ener * ds - ra * intermediateSol[jPoint].ener);
       }
       index++;
     }
@@ -421,10 +437,21 @@ void FVMSolver::upperSweep() {
         dfj.ymom -= f.ymom;
         dfj.ener -= f.ener;
 
-        df.dens += (dfj.dens * ds - waveSpeed[index] * increment[jPoint].dens);
-        df.xmom += (dfj.xmom * ds - waveSpeed[index] * increment[jPoint].xmom);
-        df.ymom += (dfj.ymom * ds - waveSpeed[index] * increment[jPoint].ymom);
-        df.ener += (dfj.ener * ds - waveSpeed[index] * increment[jPoint].ener);
+        double ra = waveSpeed[index];
+        if (param.equationtype_ == preprocess::equationType::NavierStokes) {
+          double iPointx = geom.pointList[iPoint].getCoord(0);
+          double iPointy = geom.pointList[iPoint].getCoord(1);
+          double jPointx = geom.pointList[jPoint].getCoord(0);
+          double jPointy = geom.pointList[jPoint].getCoord(1);
+          double length = std::sqrt((jPointx - iPointx) * (jPointx - iPointx) +
+                                    (jPointy - iPointy) * (jPointy - iPointy));
+          ra += eigenVisc[index] / ds / length;
+        }
+
+        df.dens += (dfj.dens * ds - ra * increment[jPoint].dens);
+        df.xmom += (dfj.xmom * ds - ra * increment[jPoint].xmom);
+        df.ymom += (dfj.ymom * ds - ra * increment[jPoint].ymom);
+        df.ener += (dfj.ener * ds - ra * increment[jPoint].ener);
       }
     }
 
