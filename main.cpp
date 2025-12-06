@@ -3,6 +3,7 @@
 #include <pre/reader.h>
 #include <solver/FVMSolver.h>
 
+#include <chrono>
 #include <grid/grid_builder.hpp>
 #include <iostream>
 #include <string>
@@ -59,21 +60,28 @@ int main(int argc, char *argv[]) {
     std::cout << "using LUSGS temporal scheme." << "\n";
     solver::LUSGSIntegrator integrator(solver);
     solver.computeWaveSpeed();
+    auto start = std::chrono::high_resolution_clock::now();
     do {
       solver.iter++;
       integrator.timeAdvance();
       solver.Convergence();
     } while (!solver.Converged());
+    auto end = std::chrono::high_resolution_clock::now();
+    auto time = std::chrono::duration<double>(end - start);
+    std::cout << "Computation costs: " << time.count() << "s" << "\n";
   } else if (param.temporalScheme == preprocess::TemporalScheme::RungeKutta) {
     std::cout << "using RungeKutta temporal scheme." << "\n";
     solver::RungeKuttaTimeIntegrator integrator(solver);
 
-    solver.computeWaveSpeed();
+    auto start = std::chrono::high_resolution_clock::now();
     do {
       solver.iter++;
       integrator.timeAdvance();
       solver.Convergence();
     } while (!solver.Converged());
+    auto end = std::chrono::high_resolution_clock::now();
+    auto time = std::chrono::duration<double>(end - start);
+    std::cout << "Computation costs: " << time.count() << "s" << "\n";
   }
 
   // solver.computeWaveSpeed();
