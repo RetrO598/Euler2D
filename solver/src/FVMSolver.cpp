@@ -9,6 +9,7 @@
 #include <cstddef>
 #include <cstdlib>
 #include <memory>
+#include <solver/numericFactory.hpp>
 #include <vector>
 
 #include "solver/timeIntegrator.hpp"
@@ -50,33 +51,11 @@ FVMSolver::FVMSolver(preprocess::parameter &parameter,
 
   cl = 0.0;
 
-  if (param.convecScheme == preprocess::ConvectionScheme::ROE) {
-    std::cout << "using ROE scheme." << "\n";
-    numeric = std::make_unique<NumericRoe>(param, geom, cv, dv, diss, rhs, lim,
-                                           gradx, grady);
-  } else if (param.convecScheme == preprocess::ConvectionScheme::SLAU2) {
-    std::cout << "using SLAU2 scheme." << "\n";
-    numeric = std::make_unique<NumericSLAU2>(param, geom, cv, dv, diss, rhs,
-                                             lim, gradx, grady);
-  } else if (param.convecScheme == preprocess::ConvectionScheme::AUSM) {
-    std::cout << "using AUSM scheme." << "\n";
-    numeric = std::make_unique<NumericAUSM>(param, geom, cv, dv, diss, rhs, lim,
-                                            gradx, grady);
-  } else if (param.convecScheme == preprocess::ConvectionScheme::AUSMUP2) {
-    std::cout << "using AUSMUP2 scheme." << "\n";
-    numeric = std::make_unique<NumericAUSMUP2>(param, geom, cv, dv, diss, rhs,
-                                               lim, gradx, grady);
-  }
+  numeric = ConvectionFactory::create(param, geom, cv, dv, diss, rhs, lim,
+                                      gradx, grady);
 
-  if (param.limiterType == preprocess::Limiter::VenkataKrishnan) {
-    std::cout << "using VenkataKrishnan limiter." << "\n";
-    limiter = std::make_unique<VenkatakrishnanLimiter>(
-        param, geom, cv, dv, umin, umax, lim, gradx, grady);
-  } else if (param.limiterType == preprocess::Limiter::NishikawaR3) {
-    std::cout << "using NishikawaR3 limiter." << "\n";
-    limiter = std::make_unique<NishikawaR3>(param, geom, cv, dv, umin, umax,
-                                            lim, gradx, grady);
-  }
+  limiter = LimiterFactory::create(param, geom, cv, dv, umin, umax, lim, gradx,
+                                   grady);
 
   rhsIter.reserve(nNodes);
   rhsOld.reserve(nNodes);
