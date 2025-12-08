@@ -82,6 +82,10 @@ class Point {
 
   Index getVertex(Index iVertex) const noexcept;
 
+  void setWallDistance(real distance) noexcept;
+
+  real getWallDistance() const noexcept;
+
  private:
   Index index;
   Index nElem;
@@ -90,6 +94,7 @@ class Point {
   std::vector<Index> points;
   std::vector<Index> edges;
   real volume;
+  real wallDistance;
   bool domain, boundary, physicalBoundary, solidBoundary;
   std::vector<Index> vertex;
   std::array<real, DIM> coord{};
@@ -341,5 +346,15 @@ Index Point<DIM>::getVertex(Index iVertex) const noexcept {
     return vertex[iVertex];
   }
   return INVALID_INDEX;
+}
+
+template <int DIM>
+void Point<DIM>::setWallDistance(real distance) noexcept {
+  wallDistance = distance;
+}
+
+template <int DIM>
+real Point<DIM>::getWallDistance() const noexcept {
+  return wallDistance;
 }
 }  // namespace preprocess

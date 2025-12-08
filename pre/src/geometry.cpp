@@ -2,10 +2,13 @@
 #include <pre/macro.h>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
+#include <cstddef>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <limits>
 #include <memory>
 #include <set>
 #include <sstream>
@@ -13,6 +16,7 @@
 #include <string>
 #include <vector>
 
+#include "common/config.hpp"
 #include "pre/parameter.h"
 
 namespace preprocess {
@@ -815,6 +819,67 @@ void Geometry::volumeProjections() {
       }
     }
     ibegn = iendn + 1;
+  }
+}
+
+void Geometry::ComputeWallDistance() {
+  Index nWallVertex = 0;
+  Index nodeNum = 0;
+  for (std::size_t i = 0; i < numBoundSegs; ++i) {
+    auto name = bname[i];
+    auto type = boundaryMap.find(name)->second;
+    if (type == BoundaryType::NoSlipWall) {
+      nWallVertex += ibound[i].bnodeIndex + 1;
+      nWallVertex -= nodeNum;
+    }
+    nodeNum = ibound[i].bnodeIndex + 1;
+  }
+
+  std::vector<std::array<double, 2>> coords;
+  coords.reserve(nWallVertex);
+
+  nWallVertex = 0;
+  nodeNum = 0;
+  Index ibegn = 0;
+  Index iendn = 0;
+  for (std::size_t i = 0; i < numBoundSegs; ++i) {
+    auto name = bname[i];
+    auto type = boundaryMap.find(name)->second;
+    iendn = ibound[i].bnodeIndex;
+    if (type == BoundaryType::NoSlipWall) {
+      nWallVertex += ibound[i].bnodeIndex + 1;
+      nWallVertex -= nodeNum;
+      for (Index inode = ibegn; inode <= iendn; ++inode) {
+        Index nodeIndex = vertexList[inode].nodeIdx;
+        coords.push_back({pointList[nodeIndex].getCoord(0),
+                          pointList[nodeIndex].getCoord(1)});
+      }
+    }
+    nodeNum = ibound[i].bnodeIndex + 1;
+    ibegn = iendn + 1;
+  }
+
+  if (coords.size() != nWallVertex) {
+    throw std::runtime_error("number of wall vertex not matching\n");
+  }
+
+  if (nWallVertex != 0) {
+    for (auto& ipoint : pointList) {
+      double distance = std::numeric_limits<double>::max();
+      std::array<double, 2> coord{ipoint.getCoord(0), ipoint.getCoord(1)};
+      double dist2 = 0.0;
+      for (auto& coordBound : coords) {
+        double dx = coord[0] - coordBound[0];
+        double dy = coord[1] - coordBound[1];
+        dist2 = dx * dx + dy * dy;
+        distance = std::min(dist2, distance);
+      }
+      ipoint.setWallDistance(std::sqrt(distance));
+    }
+  } else {
+    for (auto& ipoint : pointList) {
+      ipoint.setWallDistance(0.0);
+    }
   }
 }
 

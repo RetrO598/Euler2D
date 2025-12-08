@@ -44,6 +44,11 @@ int main(int argc, char *argv[]) {
     geometry.ComputeMetrics();
   }
 
+  if (param.equationtype_ == preprocess::equationType::RANS) {
+    std::cout << "Computing Wall Distance." << "\n";
+    geometry.ComputeWallDistance();
+  }
+
   solver::FVMSolver solver(param, geometry);
   solver.initSolver();
   solver.ConvToDependAll();

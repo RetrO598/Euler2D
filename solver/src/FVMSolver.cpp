@@ -51,6 +51,12 @@ FVMSolver::FVMSolver(preprocess::parameter &parameter,
     gradTx.resize(0);
     gradTy.resize(0);
     dvlam.resize(0);
+    turbVar.resize(0);
+    gradTurbX.resize(0);
+    gradTurbY.resize(0);
+    dissTurb.resize(0);
+    rhsTurb.resize(0);
+    turbVarOld.resize(0);
   }
 
   diag.resize(nNodes);
@@ -224,7 +230,10 @@ void FVMSolver::updateResidualRK(int irk) {
   limiter->limiterUpdate();
 
   numeric->FluxNumeric();
-  TurbConvection();
+  if (param.equationtype_ == preprocess::equationType::RANS) {
+    TurbConvection();
+  }
+
   BoundaryConditions();
   ZeroRes();
   PeriodicCons(rhs);

@@ -98,5 +98,6 @@ class Geometry {
   void FaceVectorsVolumes();
   void FaceVectorsVolumesBound();
   void volumeProjections();
+  void ComputeWallDistance();
 };
 }  // namespace preprocess
