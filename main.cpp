@@ -21,7 +21,6 @@ int main(int argc, char *argv[]) {
   std::string inputFile = argv[1];
   preprocess::yamlReader reader(inputFile);
   preprocess::parameter param;
-  // reader.customRead(param);
   reader.read(param);
   param.printParameters();
 
@@ -32,9 +31,6 @@ int main(int argc, char *argv[]) {
   if (param.gridFile.size() >= extension.size() &&
       param.gridFile.compare(param.gridFile.size() - extension.size(),
                              extension.size(), extension) == 0) {
-    // geometry.ReadSU2Grid();
-    // geometry.printInfo();
-    // geometry.ComputeMetrics();
     std::cout << "reading SU2 format mesh" << "\n";
     preprocess::SU2Reader reader(param.gridFile);
     mesh = reader.readMesh();
@@ -84,16 +80,7 @@ int main(int argc, char *argv[]) {
     std::cout << "Computation costs: " << time.count() << "s" << "\n";
   }
 
-  // solver.computeWaveSpeed();
-  // do {
-  //   solver.iter++;
-  //   integrator.timeAdvance();
-  //   // solver.solve();
-  //   solver.Convergence();
-  // } while (!solver.Converged());
-
-  // solver.writeTecplotDat();
-  // solver.writeLineDat();
+  solver.writeLineDat();
 
   if (mesh) {
     std::cout << "Writing VTK output file..." << std::endl;

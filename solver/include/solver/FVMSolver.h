@@ -104,6 +104,12 @@ class FVMSolver {
   void LUSGSupdate();
   void computeResidualLUSGS();
 
+  // for SA Turbulent model
+  void TurbGradients();
+  void TurbViscous();
+  void TurbSource();
+  void TurbConvection();
+
   preprocess::parameter &param;
   const preprocess::Geometry &geom;
   std::unique_ptr<BaseLimiter> limiter;
@@ -129,6 +135,14 @@ class FVMSolver {
   std::vector<DEPEND_VAR> dv;
 
   std::vector<VISC_VAR> dvlam;
+
+  // For SA turbulent model
+  std::vector<TurbSA_VAR> turbVar;
+  std::vector<TurbSA_VAR> turbVarOld;
+  std::vector<double> gradTurbX;
+  std::vector<double> gradTurbY;
+  std::vector<TurbSA_VAR> dissTurb;
+  std::vector<TurbSA_VAR> rhsTurb;
 
   std::vector<double> timeSteps;
 

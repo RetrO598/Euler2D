@@ -239,8 +239,15 @@ void yamlReader::read(parameter& param) {
 
   std::string eqn =
       get("physics")["general"]["equation_type"].as<std::string>();
-  param.equationtype_ =
-      (eqn == "E" ? equationType::Euler : equationType::NavierStokes);
+  // param.equationtype_ =
+  //     (eqn == "E" ? equationType::Euler : equationType::NavierStokes);
+  if (eqn == "E") {
+    param.equationtype_ = equationType::Euler;
+  } else if (eqn == "N") {
+    param.equationtype_ = equationType::NavierStokes;
+  } else if (eqn == "R") {
+    param.equationtype_ = equationType::RANS;
+  }
 
   param.gamma = get("physics")["general"]["gamma"].as<double>();
   param.Cp = get("physics")["general"]["cp"].as<double>();

@@ -30,6 +30,8 @@ void parameter::printParameters() {
     std::cout << "Euler equation" << "\n";
   } else if (equationtype_ == equationType::NavierStokes) {
     std::cout << "Navier-Stokes equation" << "\n";
+  } else if (equationtype_ == equationType::RANS) {
+    std::cout << "RANS equation" << "\n";
   }
 
   std::cout << "Ratio of specific heats: " << gamma << "\n";

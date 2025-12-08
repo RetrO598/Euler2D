@@ -37,6 +37,16 @@ FVMSolver::FVMSolver(preprocess::parameter &parameter,
     gradTx.resize(nNodes);
     gradTy.resize(nNodes);
     dvlam.resize(nNodes);
+  } else if (param.equationtype_ == preprocess::equationType::RANS) {
+    gradTx.resize(nNodes);
+    gradTy.resize(nNodes);
+    dvlam.resize(nNodes);
+    turbVar.resize(nNodes);
+    gradTurbX.resize(nNodes);
+    gradTurbY.resize(nNodes);
+    dissTurb.resize(nNodes);
+    rhsTurb.resize(nNodes);
+    turbVarOld.resize(nNodes);
   } else {
     gradTx.resize(0);
     gradTy.resize(0);
@@ -203,12 +213,18 @@ void FVMSolver::updateResidualRK(int irk) {
     fluxVisc();
   } else if (param.equationtype_ == preprocess::equationType::Euler) {
     Gradients();
+  } else if (param.equationtype_ == preprocess::equationType::RANS) {
+    GradientsVisc();
+    fluxVisc();
+    TurbGradients();
+    TurbViscous();
   }
 
   limiter->limiterInit();
   limiter->limiterUpdate();
 
   numeric->FluxNumeric();
+  TurbConvection();
   BoundaryConditions();
   ZeroRes();
   PeriodicCons(rhs);
@@ -221,9 +237,21 @@ void FVMSolver::updateResidualRK(int irk) {
     rhs[i].ymom *= adtv;
     rhs[i].ener *= adtv;
   }
+
+  if (param.equationtype_ == preprocess::equationType::RANS) {
+    for (int i = 0; i < geom.phyNodes; ++i) {
+      double adtv = fac * timeSteps[i] / geom.vol[i];
+      rhsTurb[i].nu_turb *= adtv;
+    }
+  }
 }
 
-void FVMSolver::assignCVold() { cvOld = cv; }
+void FVMSolver::assignCVold() {
+  cvOld = cv;
+  if (param.equationtype_ == preprocess::equationType::RANS) {
+    turbVarOld = turbVar;
+  }
+}
 
 void FVMSolver::updateCV() {
   for (int i = 0; i < geom.phyNodes; ++i) {

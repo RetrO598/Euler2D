@@ -27,8 +27,12 @@ struct VISC_VAR {
   double lambda;
 };
 
+struct TurbSA_VAR {
+  double nu_turb;
+};
+
 struct interfaceVar {
   PRIM_VAR left;
   PRIM_VAR right;
 };
-} // namespace solver
+}  // namespace solver

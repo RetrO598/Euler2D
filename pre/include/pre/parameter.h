@@ -24,7 +24,7 @@ enum class Limiter { VenkataKrishnan, NishikawaR3 };
 
 enum class flowType { Internal, External };
 
-enum class equationType { Euler, NavierStokes };
+enum class equationType { Euler, NavierStokes, RANS };
 
 enum class timeStep { local, global };
 
