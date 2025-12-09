@@ -52,6 +52,7 @@ int main(int argc, char *argv[]) {
   solver::FVMSolver solver(param, geometry);
   solver.initSolver();
   solver.ConvToDependAll();
+  solver.initTurbSolver();
   solver.BoundaryConditions();
 
   solver.limiter->limiterRefVals();

@@ -109,6 +109,8 @@ class FVMSolver {
   void TurbViscous();
   void TurbSource();
   void TurbConvection();
+  void TurbDissInit();
+  void initTurbSolver();
 
   preprocess::parameter &param;
   const preprocess::Geometry &geom;

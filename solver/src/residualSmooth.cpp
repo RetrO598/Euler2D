@@ -39,6 +39,14 @@ void FVMSolver::ZeroRes() {
         rhs[i].xmom = 0.0;
         rhs[i].ymom = 0.0;
       }
+    } else if ((type == preprocess::BoundaryType::NoSlipWall) &&
+               param.equationtype_ == preprocess::equationType::RANS) {
+      for (int ibn = ibegn; ibn <= iendn; ++ibn) {
+        int i = geom.vertexList[ibn].nodeIdx;
+        rhs[i].xmom = 0.0;
+        rhs[i].ymom = 0.0;
+        rhsTurb[i].nu_turb = 0.0;
+      }
     }
     ibegn = iendn + 1;
     ibegf = iendf + 1;

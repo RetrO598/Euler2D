@@ -327,6 +327,7 @@ void FVMSolver::GradientsVisc() {
       }
     }
     ibegn = iendn + 1;
+    ibegf = iendf + 1;
   }
 
   PeriodicPrim(gradx);

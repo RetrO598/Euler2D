@@ -213,6 +213,9 @@ void FVMSolver::ConvToDepend(int i) {
 
 void FVMSolver::updateResidualRK(int irk) {
   numeric->DissipInit();
+  if (param.equationtype_ == preprocess::equationType::RANS) {
+    TurbDissInit();
+  }
 
   if (param.equationtype_ == preprocess::equationType::NavierStokes) {
     GradientsVisc();
@@ -232,6 +235,7 @@ void FVMSolver::updateResidualRK(int irk) {
   numeric->FluxNumeric();
   if (param.equationtype_ == preprocess::equationType::RANS) {
     TurbConvection();
+    TurbSource();
   }
 
   BoundaryConditions();
@@ -268,6 +272,12 @@ void FVMSolver::updateCV() {
     cv[i].xmom = cvOld[i].xmom - rhs[i].xmom;
     cv[i].ymom = cvOld[i].ymom - rhs[i].ymom;
     cv[i].ener = cvOld[i].ener - rhs[i].ener;
+  }
+
+  if (param.equationtype_ == preprocess::equationType::RANS) {
+    for (int i = 0; i < geom.phyNodes; ++i) {
+      turbVar[i].nu_turb = turbVarOld[i].nu_turb - rhsTurb[i].nu_turb;
+    }
   }
 }
 

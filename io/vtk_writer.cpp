@@ -102,9 +102,23 @@ void writeVTKFile(const std::string& filename,
   timeStepArr->SetNumberOfTuples(numPoints);
 
   auto mueArr = vtkSmartPointer<vtkDoubleArray>::New();
-  if (solver.param.equationtype_ == preprocess::equationType::NavierStokes) {
+  if (solver.param.equationtype_ == preprocess::equationType::NavierStokes ||
+      solver.param.equationtype_ == preprocess::equationType::RANS) {
     mueArr->SetName("dynamicViscosity");
     mueArr->SetNumberOfTuples(numPoints);
+  }
+
+  auto nuLamArr = vtkSmartPointer<vtkDoubleArray>::New();
+  if (solver.param.equationtype_ == preprocess::equationType::NavierStokes ||
+      solver.param.equationtype_ == preprocess::equationType::RANS) {
+    nuLamArr->SetName("laminarViscosity");
+    nuLamArr->SetNumberOfTuples(numPoints);
+  }
+
+  auto nuTurbArr = vtkSmartPointer<vtkDoubleArray>::New();
+  if (solver.param.equationtype_ == preprocess::equationType::RANS) {
+    nuTurbArr->SetName("turbulentViscosity");
+    nuTurbArr->SetNumberOfTuples(numPoints);
   }
 
   // Populate the arrays with data from the solver
@@ -123,8 +137,18 @@ void writeVTKFile(const std::string& filename,
     pressure->SetTuple1(i, p);
     timeStepArr->SetTuple1(i, timeSteps[i]);
 
-    if (solver.param.equationtype_ == preprocess::equationType::NavierStokes) {
+    if (solver.param.equationtype_ == preprocess::equationType::NavierStokes ||
+        solver.param.equationtype_ == preprocess::equationType::RANS) {
       mueArr->SetTuple1(i, solver.dvlam[i].mu);
+    }
+
+    if (solver.param.equationtype_ == preprocess::equationType::NavierStokes ||
+        solver.param.equationtype_ == preprocess::equationType::RANS) {
+      nuLamArr->SetTuple1(i, solver.dvlam[i].mu / solver.cv[i].dens);
+    }
+
+    if (solver.param.equationtype_ == preprocess::equationType::RANS) {
+      nuTurbArr->SetTuple1(i, solver.turbVar[i].nu_turb);
     }
   }
 
@@ -135,8 +159,13 @@ void writeVTKFile(const std::string& filename,
   pointData->AddArray(velocity);
   pointData->AddArray(pressure);
   pointData->AddArray(timeStepArr);
-  if (solver.param.equationtype_ == preprocess::equationType::NavierStokes) {
+  if (solver.param.equationtype_ == preprocess::equationType::NavierStokes ||
+      solver.param.equationtype_ == preprocess::equationType::RANS) {
     pointData->AddArray(mueArr);
+    pointData->AddArray(nuLamArr);
+  }
+  if (solver.param.equationtype_ == preprocess::equationType::RANS) {
+    pointData->AddArray(nuTurbArr);
   }
 
   // 5. Write the grid to a .vtu file

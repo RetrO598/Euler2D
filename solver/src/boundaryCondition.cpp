@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "pre/parameter.h"
+#include "solver/turbTemplate.hpp"
 #include "solver/variableDef.h"
 
 namespace solver {
@@ -15,7 +16,6 @@ void FVMSolver::BoundaryConditions() {
     auto name = geom.bname[ib];
     auto type = param.boundaryMap.find(name)->second;
     int iendn = geom.ibound[ib].bnodeIndex;
-
     if (type == preprocess::BoundaryType::Inflow) {
       BoundInflow(ibegn, iendn);
     } else if (type == preprocess::BoundaryType::Outflow) {
@@ -25,12 +25,18 @@ void FVMSolver::BoundaryConditions() {
     }
     ibegn = iendn + 1;
   }
+
   ibegn = 0;
   for (int ib = 0; ib < geom.numBoundSegs; ++ib) {
     auto name = geom.bname[ib];
     auto type = param.boundaryMap.find(name)->second;
     int iendn = geom.ibound[ib].bnodeIndex;
     if (param.equationtype_ == preprocess::equationType::NavierStokes &&
+        (type == preprocess::BoundaryType::NoSlipWall)) {
+      BoundWallVisc(ibegn, iendn);
+    }
+
+    if (param.equationtype_ == preprocess::equationType::RANS &&
         (type == preprocess::BoundaryType::NoSlipWall)) {
       BoundWallVisc(ibegn, iendn);
     }
@@ -97,6 +103,24 @@ void FVMSolver::BoundInflow(int beg, int end) {
           cv[ibn], dummy, dvlam[ibn], dummyVisc, gradx[ibn], grady[ibn],
           gradTx[ibn], gradTy[ibn], geom.vertexList[ib].normal[0],
           geom.vertexList[ib].normal[1], rhs[ibn]);
+    }
+
+    if (param.equationtype_ == preprocess::equationType::RANS) {
+      ViscousNumericBound::ComputeResidual(
+          cv[ibn], dummy, dvlam[ibn], dummyVisc, gradx[ibn], grady[ibn],
+          gradTx[ibn], gradTy[ibn], geom.vertexList[ib].normal[0],
+          geom.vertexList[ib].normal[1], rhs[ibn]);
+
+      double nuLami = dvlam[ibn].mu / cv[ibn].dens;
+      double nuLamj = dummyVisc.mu / dummy.dens;
+
+      double nuTurbi = turbVar[ibn].nu_turb;
+      double nuTurbj = 3.5 * nuLamj;
+
+      TurbViscousBound::ComputeResidual(
+          nuLami, nuLamj, nuTurbi, nuTurbj, gradTurbX[ibn], gradTurbY[ibn],
+          geom.vertexList[ib].normal[0], geom.vertexList[ib].normal[1],
+          rhsTurb[ibn]);
     }
   }
 }
@@ -195,6 +219,24 @@ void FVMSolver::BoundFarfield(int beg, int end) {
               geom.vertexList[ib].normal[1], rhs[ibn]);
         }
 
+        if (param.equationtype_ == preprocess::equationType::RANS) {
+          ViscousNumericBound::ComputeResidual(
+              cv[ibn], dummy, dvlam[ibn], dummyVisc, gradx[ibn], grady[ibn],
+              gradTx[ibn], gradTy[ibn], geom.vertexList[ib].normal[0],
+              geom.vertexList[ib].normal[1], rhs[ibn]);
+
+          double nuLami = dvlam[ibn].mu / cv[ibn].dens;
+          double nuLamj = dummyVisc.mu / dummy.dens;
+
+          double nuTurbi = turbVar[ibn].nu_turb;
+          double nuTurbj = 3.5 * nuLamj;
+
+          TurbViscousBound::ComputeResidual(
+              nuLami, nuLamj, nuTurbi, nuTurbj, gradTurbX[ibn], gradTurbY[ibn],
+              geom.vertexList[ib].normal[0], geom.vertexList[ib].normal[1],
+              rhsTurb[ibn]);
+        }
+
       } else {
         if (qn < 0.0) {
           CONS_VAR dummy;
@@ -220,6 +262,24 @@ void FVMSolver::BoundFarfield(int beg, int end) {
                 gradTx[ibn], gradTy[ibn], geom.vertexList[ib].normal[0],
                 geom.vertexList[ib].normal[1], rhs[ibn]);
           }
+
+          if (param.equationtype_ == preprocess::equationType::RANS) {
+            ViscousNumericBound::ComputeResidual(
+                cv[ibn], dummy, dvlam[ibn], dummyVisc, gradx[ibn], grady[ibn],
+                gradTx[ibn], gradTy[ibn], geom.vertexList[ib].normal[0],
+                geom.vertexList[ib].normal[1], rhs[ibn]);
+
+            double nuLami = dvlam[ibn].mu / cv[ibn].dens;
+            double nuLamj = dummyVisc.mu / dummy.dens;
+
+            double nuTurbi = turbVar[ibn].nu_turb;
+            double nuTurbj = 3.5 * nuLamj;
+
+            TurbViscousBound::ComputeResidual(
+                nuLami, nuLamj, nuTurbi, nuTurbj, gradTurbX[ibn],
+                gradTurbY[ibn], geom.vertexList[ib].normal[0],
+                geom.vertexList[ib].normal[1], rhsTurb[ibn]);
+          }
         } else {
           CONS_VAR dummy;
           dummy.dens = cv[ibn].dens;
@@ -240,6 +300,24 @@ void FVMSolver::BoundFarfield(int beg, int end) {
                 cv[ibn], dummy, dvlam[ibn], dummyVisc, gradx[ibn], grady[ibn],
                 gradTx[ibn], gradTy[ibn], geom.vertexList[ib].normal[0],
                 geom.vertexList[ib].normal[1], rhs[ibn]);
+          }
+
+          if (param.equationtype_ == preprocess::equationType::RANS) {
+            ViscousNumericBound::ComputeResidual(
+                cv[ibn], dummy, dvlam[ibn], dummyVisc, gradx[ibn], grady[ibn],
+                gradTx[ibn], gradTy[ibn], geom.vertexList[ib].normal[0],
+                geom.vertexList[ib].normal[1], rhs[ibn]);
+
+            double nuLami = dvlam[ibn].mu / cv[ibn].dens;
+            double nuLamj = dummyVisc.mu / dummy.dens;
+
+            double nuTurbi = turbVar[ibn].nu_turb;
+            double nuTurbj = 3.5 * nuLamj;
+
+            TurbViscousBound::ComputeResidual(
+                nuLami, nuLamj, nuTurbi, nuTurbj, gradTurbX[ibn],
+                gradTurbY[ibn], geom.vertexList[ib].normal[0],
+                geom.vertexList[ib].normal[1], rhsTurb[ibn]);
           }
         }
       }
@@ -313,6 +391,24 @@ void FVMSolver::BoundFarfield(int beg, int end) {
               gradTx[ibn], gradTy[ibn], geom.vertexList[ib].normal[0],
               geom.vertexList[ib].normal[1], rhs[ibn]);
         }
+
+        if (param.equationtype_ == preprocess::equationType::RANS) {
+          ViscousNumericBound::ComputeResidual(
+              cv[ibn], dummy, dvlam[ibn], dummyVisc, gradx[ibn], grady[ibn],
+              gradTx[ibn], gradTy[ibn], geom.vertexList[ib].normal[0],
+              geom.vertexList[ib].normal[1], rhs[ibn]);
+
+          double nuLami = dvlam[ibn].mu / cv[ibn].dens;
+          double nuLamj = dummyVisc.mu / dummy.dens;
+
+          double nuTurbi = turbVar[ibn].nu_turb;
+          double nuTurbj = 3.5 * nuLamj;
+
+          TurbViscousBound::ComputeResidual(
+              nuLami, nuLamj, nuTurbi, nuTurbj, gradTurbX[ibn], gradTurbY[ibn],
+              geom.vertexList[ib].normal[0], geom.vertexList[ib].normal[1],
+              rhsTurb[ibn]);
+        }
       } else {
         if (qn < 0.0) {
           CONS_VAR dummy;
@@ -336,6 +432,24 @@ void FVMSolver::BoundFarfield(int beg, int end) {
                 gradTx[ibn], gradTy[ibn], geom.vertexList[ib].normal[0],
                 geom.vertexList[ib].normal[1], rhs[ibn]);
           }
+
+          if (param.equationtype_ == preprocess::equationType::RANS) {
+            ViscousNumericBound::ComputeResidual(
+                cv[ibn], dummy, dvlam[ibn], dummyVisc, gradx[ibn], grady[ibn],
+                gradTx[ibn], gradTy[ibn], geom.vertexList[ib].normal[0],
+                geom.vertexList[ib].normal[1], rhs[ibn]);
+
+            double nuLami = dvlam[ibn].mu / cv[ibn].dens;
+            double nuLamj = dummyVisc.mu / dummy.dens;
+
+            double nuTurbi = turbVar[ibn].nu_turb;
+            double nuTurbj = 3.5 * nuLamj;
+
+            TurbViscousBound::ComputeResidual(
+                nuLami, nuLamj, nuTurbi, nuTurbj, gradTurbX[ibn],
+                gradTurbY[ibn], geom.vertexList[ib].normal[0],
+                geom.vertexList[ib].normal[1], rhsTurb[ibn]);
+          }
         } else {
           CONS_VAR dummy;
           dummy.dens = cv[ibn].dens;
@@ -356,6 +470,24 @@ void FVMSolver::BoundFarfield(int beg, int end) {
                 cv[ibn], dummy, dvlam[ibn], dummyVisc, gradx[ibn], grady[ibn],
                 gradTx[ibn], gradTy[ibn], geom.vertexList[ib].normal[0],
                 geom.vertexList[ib].normal[1], rhs[ibn]);
+          }
+
+          if (param.equationtype_ == preprocess::equationType::RANS) {
+            ViscousNumericBound::ComputeResidual(
+                cv[ibn], dummy, dvlam[ibn], dummyVisc, gradx[ibn], grady[ibn],
+                gradTx[ibn], gradTy[ibn], geom.vertexList[ib].normal[0],
+                geom.vertexList[ib].normal[1], rhs[ibn]);
+
+            double nuLami = dvlam[ibn].mu / cv[ibn].dens;
+            double nuLamj = dummyVisc.mu / dummy.dens;
+
+            double nuTurbi = turbVar[ibn].nu_turb;
+            double nuTurbj = 3.5 * nuLamj;
+
+            TurbViscousBound::ComputeResidual(
+                nuLami, nuLamj, nuTurbi, nuTurbj, gradTurbX[ibn],
+                gradTurbY[ibn], geom.vertexList[ib].normal[0],
+                geom.vertexList[ib].normal[1], rhsTurb[ibn]);
           }
         }
       }
@@ -420,6 +552,24 @@ void FVMSolver::BoundOutflow(int beg, int end) {
           gradTx[ibn], gradTy[ibn], geom.vertexList[ib].normal[0],
           geom.vertexList[ib].normal[1], rhs[ibn]);
     }
+
+    if (param.equationtype_ == preprocess::equationType::RANS) {
+      ViscousNumericBound::ComputeResidual(
+          cv[ibn], dummy, dvlam[ibn], dummyVisc, gradx[ibn], grady[ibn],
+          gradTx[ibn], gradTy[ibn], geom.vertexList[ib].normal[0],
+          geom.vertexList[ib].normal[1], rhs[ibn]);
+
+      double nuLami = dvlam[ibn].mu / cv[ibn].dens;
+      double nuLamj = dummyVisc.mu / dummy.dens;
+
+      double nuTurbi = turbVar[ibn].nu_turb;
+      double nuTurbj = 3.5 * nuLamj;
+
+      TurbViscousBound::ComputeResidual(
+          nuLami, nuLamj, nuTurbi, nuTurbj, gradTurbX[ibn], gradTurbY[ibn],
+          geom.vertexList[ib].normal[0], geom.vertexList[ib].normal[1],
+          rhsTurb[ibn]);
+    }
   }
 }
 
@@ -430,6 +580,10 @@ void FVMSolver::WallVisc() {
     auto name = geom.bname[ib];
     auto type = param.boundaryMap.find(name)->second;
     if (param.equationtype_ == preprocess::equationType::NavierStokes &&
+        (type == preprocess::BoundaryType::NoSlipWall)) {
+      BoundWallVisc(ibegn, iendn);
+    }
+    if (param.equationtype_ == preprocess::equationType::RANS &&
         (type == preprocess::BoundaryType::NoSlipWall)) {
       BoundWallVisc(ibegn, iendn);
     }
@@ -444,6 +598,10 @@ void FVMSolver::BoundWallVisc(int beg, int end) {
 
     cv[ibn].xmom = 0.0;
     cv[ibn].ymom = 0.0;
+
+    if (param.equationtype_ == preprocess::equationType::RANS) {
+      turbVar[ibn].nu_turb = 0.0;
+    }
 
     ConvToDepend(ibn);
   }

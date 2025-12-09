@@ -7,12 +7,12 @@ namespace solver {
 struct UpwindTurbSA {
   inline static void ComputeResidual(double nx, double ny, double ds,
                                      TurbSA_VAR nui, TurbSA_VAR nuj,
-                                     PRIM_VAR vari, PRIM_VAR varj,
+                                     CONS_VAR vari, CONS_VAR varj,
                                      TurbSA_VAR &resi, TurbSA_VAR &resj) {
-    double ul = vari.velx;
-    double vl = vari.vely;
-    double ur = varj.velx;
-    double vr = varj.vely;
+    double ul = vari.xmom / vari.dens;
+    double vl = vari.ymom / vari.dens;
+    double ur = varj.xmom / varj.dens;
+    double vr = varj.ymom / varj.dens;
 
     double q = 0.5 * (ul + ur) * nx + 0.5 * (vl + vr) * ny;
     double a0 = 0.5 * (q + std::fabs(q));
@@ -22,6 +22,22 @@ struct UpwindTurbSA {
 
     resi.nu_turb += result * ds;
     resj.nu_turb -= result * ds;
+  }
+};
+
+struct TurbViscousBound {
+  inline static void ComputeResidual(double nuLami, double nuLamj,
+                                     double nuTurbi, double nuTurbj,
+                                     double gradx, double grady, double sx,
+                                     double sy, TurbSA_VAR &resi) {
+    double nuLamAve = 0.5 * (nuLami + nuLami);
+    double nuTurbAve = 0.5 * (nuTurbi + nuTurbi);
+    double sigma = 2.0 / 3.0;
+    double fv;
+    fv = (nuLamAve + nuTurbAve) / sigma * gradx * sx +
+         (nuLamAve + nuTurbAve) / sigma * grady * sy;
+
+    resi.nu_turb -= fv;
   }
 };
 }  // namespace solver
