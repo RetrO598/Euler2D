@@ -2,6 +2,7 @@
 #include <solver/FVMSolver.h>
 
 #include <cmath>
+#include <cstdlib>
 
 #include "pre/parameter.h"
 
@@ -31,16 +32,16 @@ void FVMSolver::fluxVisc() {
       double Ji3_j = Ji2_j * Ji_j;
       double fv1_j = Ji3_j / (Ji3_j + cv1_3);
       muTurbi = turbVar[i].nu_turb * cv[i].dens * fv1_i;
-      muTurbj = turbVar[j].nu_turb * cv[i].dens * fv1_j;
+      muTurbj = turbVar[j].nu_turb * cv[j].dens * fv1_j;
       lambdaTurbi = dv[i].Cp * muTurbi / 0.9;
       lambdaTurbj = dv[j].Cp * muTurbj / 0.9;
-    }
 
-    // if (std::isnan(muTurbi) || std::isnan(muTurbj) || std::isnan(lambdaTurbi)
-    // ||
-    //     std::isnan(lambdaTurbj)) {
-    //   std::cout << "SA vaiable not a number" << "\n";
-    // }
+      if (std::isnan(Ji_i)) {
+        std::cout << turbVar[i].nu_turb << " " << nuLami << "\n";
+        std::cout << "SA vaiable not a number" << "\n";
+        exit(1);
+      }
+    }
 
     double ui = cv[i].xmom / cv[i].dens;
     double uj = cv[j].xmom / cv[j].dens;

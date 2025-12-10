@@ -18,7 +18,6 @@ void RungeKuttaTimeIntegrator::timeAdvance() {
     }
 
     solver.updateCV();
-
     solver.ConvToDependAll();
 
     solver.WallVisc();

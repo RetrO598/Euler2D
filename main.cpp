@@ -49,6 +49,11 @@ int main(int argc, char *argv[]) {
     geometry.ComputeWallDistance();
   }
 
+  // std::ofstream outputFile("wall_distance.txt");
+  // for (std::size_t i = 0; i < geometry.phyNodes; ++i) {
+  //   outputFile <<geometry.pointList[i].getWallDistance() << "\n";
+  // }
+
   solver::FVMSolver solver(param, geometry);
   solver.initSolver();
   solver.ConvToDependAll();

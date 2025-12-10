@@ -1,5 +1,7 @@
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
+#include <iostream>
 
 #include "pre/parameter.h"
 #include "solver/FVMSolver.h"
@@ -22,6 +24,11 @@ void FVMSolver::TurbGradients() {
 
     gradTurbY[i] += ave * sy;
     gradTurbY[j] -= ave * sy;
+
+    if (std::isnan(ave)) {
+      std::cout << "not a number from gradient\n";
+      exit(1);
+    }
   }
 
   int ibegf = 0;
@@ -53,6 +60,11 @@ void FVMSolver::TurbGradients() {
 
         gradTurbX[j] += ave * sx;
         gradTurbY[j] += ave * sy;
+
+        if (std::isnan(ave)) {
+          std::cout << "not a number from gradient\n";
+          exit(1);
+        }
       }
     }
     ibegf = iendf + 1;
@@ -142,6 +154,13 @@ void FVMSolver::TurbViscous() {
 
     dissTurb[i].nu_turb += fv;
     dissTurb[j].nu_turb -= fv;
+
+    if (std::isnan(dvlam[i].mu) || std::isnan(dvlam[j].mu)) {
+      std::cout << "not a number from viscous" << "\n";
+      std::cout << i << " " << dvlam[i].mu << "\n";
+      std::cout << j << " " << dvlam[j].mu << "\n";
+      exit(1);
+    }
   }
 }
 
@@ -165,7 +184,7 @@ void FVMSolver::TurbSource() {
     double crossProduction = 0.0;
 
     double vorticity =
-        0.5 * (gradx[i].vely - grady[i].velx) * (gradx[i].vely - grady[i].vely);
+        (gradx[i].vely - grady[i].velx) * (gradx[i].vely - grady[i].velx);
     double omega = std::sqrt(vorticity);
 
     if (geom.pointList[i].getWallDistance() > 1e-10) {
@@ -197,6 +216,12 @@ void FVMSolver::TurbSource() {
 
       rhsTurb[i].nu_turb -=
           (production - destruction + crossProduction) * geom.vol[i];
+
+      if (std::isnan(production) || std::isnan(destruction) ||
+          std::isnan(crossProduction)) {
+        std::cout << "not a number from source" << "\n";
+        exit(1);
+      }
     }
   }
 }

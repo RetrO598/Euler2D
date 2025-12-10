@@ -179,7 +179,8 @@ void simpleReader::customRead(parameter& param) {
     param.refMach2 = param.MaInfinity * param.MaInfinity;
     param.refRho = param.RhoInfinity;
     param.refVel = param.velInfinity;
-    if (param.equationtype_ == equationType::NavierStokes) {
+    if (param.equationtype_ == equationType::NavierStokes ||
+        param.equationtype_ == equationType::RANS) {
       param.refVisc =
           param.RhoInfinity * param.velInfinity * param.chord / param.Re;
     } else {
@@ -193,7 +194,8 @@ void simpleReader::customRead(parameter& param) {
     param.flowAngIn = param.flowAngIn * M_PI / 180.0;
     param.approxFlowAngOut = param.approxFlowAngOut * M_PI / 180.0;
     param.refMach2 = mach * mach;
-    if (param.equationtype_ == equationType::NavierStokes) {
+    if (param.equationtype_ == equationType::NavierStokes ||
+        param.equationtype_ == equationType::RANS) {
       param.refVisc = param.refRho * param.refVel * param.chord / param.Re;
     } else {
       param.refVisc = 0.0;
@@ -423,7 +425,8 @@ void yamlReader::read(parameter& param) {
     param.refRho = param.RhoInfinity;
     param.refVel = param.velInfinity;
     param.refVisc =
-        (param.equationtype_ == equationType::NavierStokes)
+        (param.equationtype_ == equationType::NavierStokes ||
+         param.equationtype_ == equationType::RANS)
             ? param.RhoInfinity * param.velInfinity * param.chord / param.Re
             : 0.0;
   } else {
@@ -433,7 +436,8 @@ void yamlReader::read(parameter& param) {
     param.flowAngIn *= M_PI / 180.0;
     param.approxFlowAngOut *= M_PI / 180.0;
     param.refMach2 = mach * mach;
-    param.refVisc = (param.equationtype_ == equationType::NavierStokes)
+    param.refVisc = (param.equationtype_ == equationType::NavierStokes ||
+                     param.equationtype_ == equationType::RANS)
                         ? param.refRho * param.refVel * param.chord / param.Re
                         : 0.0;
   }

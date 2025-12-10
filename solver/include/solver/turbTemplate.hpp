@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cmath>
+#include <cstdlib>
+#include <iostream>
 
 #include "solver/variableDef.h"
 namespace solver {
@@ -22,6 +24,11 @@ struct UpwindTurbSA {
 
     resi.nu_turb += result * ds;
     resj.nu_turb -= result * ds;
+
+    if (std::isnan(result)) {
+      std::cout << "not a number from convection\n";
+      exit(1);
+    }
   }
 };
 
@@ -30,14 +37,19 @@ struct TurbViscousBound {
                                      double nuTurbi, double nuTurbj,
                                      double gradx, double grady, double sx,
                                      double sy, TurbSA_VAR &resi) {
-    double nuLamAve = 0.5 * (nuLami + nuLami);
-    double nuTurbAve = 0.5 * (nuTurbi + nuTurbi);
+    double nuLamAve = 0.5 * (nuLami + nuLamj);
+    double nuTurbAve = 0.5 * (nuTurbi + nuTurbj);
     double sigma = 2.0 / 3.0;
     double fv;
     fv = (nuLamAve + nuTurbAve) / sigma * gradx * sx +
          (nuLamAve + nuTurbAve) / sigma * grady * sy;
 
     resi.nu_turb -= fv;
+
+    if (std::isnan(fv)) {
+      std::cout << "not a number from visous boundary\n";
+      exit(1);
+    }
   }
 };
 }  // namespace solver

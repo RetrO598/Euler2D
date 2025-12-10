@@ -117,6 +117,13 @@ void FVMSolver::BoundInflow(int beg, int end) {
       double nuTurbi = turbVar[ibn].nu_turb;
       double nuTurbj = 3.5 * nuLamj;
 
+      TurbSA_VAR turb_dummy;
+      turb_dummy.nu_turb = nuTurbj;
+      TurbSA_VAR turb_rhs_dummy;
+      UpwindTurbSA::ComputeResidual(sxn, syn, ds, turbVar[ibn], turb_dummy,
+                                    cv[ibn], dummy, rhsTurb[ibn],
+                                    turb_rhs_dummy);
+
       TurbViscousBound::ComputeResidual(
           nuLami, nuLamj, nuTurbi, nuTurbj, gradTurbX[ibn], gradTurbY[ibn],
           geom.vertexList[ib].normal[0], geom.vertexList[ib].normal[1],
@@ -231,6 +238,13 @@ void FVMSolver::BoundFarfield(int beg, int end) {
           double nuTurbi = turbVar[ibn].nu_turb;
           double nuTurbj = 3.5 * nuLamj;
 
+          TurbSA_VAR turb_dummy;
+          turb_dummy.nu_turb = nuTurbj;
+          TurbSA_VAR turb_rhs_dummy;
+          UpwindTurbSA::ComputeResidual(sxn, syn, ds, turbVar[ibn], turb_dummy,
+                                        cv[ibn], dummy, rhsTurb[ibn],
+                                        turb_rhs_dummy);
+
           TurbViscousBound::ComputeResidual(
               nuLami, nuLamj, nuTurbi, nuTurbj, gradTurbX[ibn], gradTurbY[ibn],
               geom.vertexList[ib].normal[0], geom.vertexList[ib].normal[1],
@@ -275,6 +289,13 @@ void FVMSolver::BoundFarfield(int beg, int end) {
             double nuTurbi = turbVar[ibn].nu_turb;
             double nuTurbj = 3.5 * nuLamj;
 
+            TurbSA_VAR turb_dummy;
+            turb_dummy.nu_turb = nuTurbj;
+            TurbSA_VAR turb_rhs_dummy;
+            UpwindTurbSA::ComputeResidual(sxn, syn, ds, turbVar[ibn],
+                                          turb_dummy, cv[ibn], dummy,
+                                          rhsTurb[ibn], turb_rhs_dummy);
+
             TurbViscousBound::ComputeResidual(
                 nuLami, nuLamj, nuTurbi, nuTurbj, gradTurbX[ibn],
                 gradTurbY[ibn], geom.vertexList[ib].normal[0],
@@ -313,6 +334,13 @@ void FVMSolver::BoundFarfield(int beg, int end) {
 
             double nuTurbi = turbVar[ibn].nu_turb;
             double nuTurbj = 3.5 * nuLamj;
+
+            TurbSA_VAR turb_dummy;
+            turb_dummy.nu_turb = nuTurbj;
+            TurbSA_VAR turb_rhs_dummy;
+            UpwindTurbSA::ComputeResidual(sxn, syn, ds, turbVar[ibn],
+                                          turb_dummy, cv[ibn], dummy,
+                                          rhsTurb[ibn], turb_rhs_dummy);
 
             TurbViscousBound::ComputeResidual(
                 nuLami, nuLamj, nuTurbi, nuTurbj, gradTurbX[ibn],
@@ -404,6 +432,13 @@ void FVMSolver::BoundFarfield(int beg, int end) {
           double nuTurbi = turbVar[ibn].nu_turb;
           double nuTurbj = 3.5 * nuLamj;
 
+          TurbSA_VAR turb_dummy;
+          turb_dummy.nu_turb = nuTurbj;
+          TurbSA_VAR turb_rhs_dummy;
+          UpwindTurbSA::ComputeResidual(sxn, syn, ds, turbVar[ibn], turb_dummy,
+                                        cv[ibn], dummy, rhsTurb[ibn],
+                                        turb_rhs_dummy);
+
           TurbViscousBound::ComputeResidual(
               nuLami, nuLamj, nuTurbi, nuTurbj, gradTurbX[ibn], gradTurbY[ibn],
               geom.vertexList[ib].normal[0], geom.vertexList[ib].normal[1],
@@ -445,6 +480,13 @@ void FVMSolver::BoundFarfield(int beg, int end) {
             double nuTurbi = turbVar[ibn].nu_turb;
             double nuTurbj = 3.5 * nuLamj;
 
+            TurbSA_VAR turb_dummy;
+            turb_dummy.nu_turb = nuTurbj;
+            TurbSA_VAR turb_rhs_dummy;
+            UpwindTurbSA::ComputeResidual(sxn, syn, ds, turbVar[ibn],
+                                          turb_dummy, cv[ibn], dummy,
+                                          rhsTurb[ibn], turb_rhs_dummy);
+
             TurbViscousBound::ComputeResidual(
                 nuLami, nuLamj, nuTurbi, nuTurbj, gradTurbX[ibn],
                 gradTurbY[ibn], geom.vertexList[ib].normal[0],
@@ -483,6 +525,13 @@ void FVMSolver::BoundFarfield(int beg, int end) {
 
             double nuTurbi = turbVar[ibn].nu_turb;
             double nuTurbj = 3.5 * nuLamj;
+
+            TurbSA_VAR turb_dummy;
+            turb_dummy.nu_turb = nuTurbj;
+            TurbSA_VAR turb_rhs_dummy;
+            UpwindTurbSA::ComputeResidual(sxn, syn, ds, turbVar[ibn],
+                                          turb_dummy, cv[ibn], dummy,
+                                          rhsTurb[ibn], turb_rhs_dummy);
 
             TurbViscousBound::ComputeResidual(
                 nuLami, nuLamj, nuTurbi, nuTurbj, gradTurbX[ibn],
@@ -563,7 +612,14 @@ void FVMSolver::BoundOutflow(int beg, int end) {
       double nuLamj = dummyVisc.mu / dummy.dens;
 
       double nuTurbi = turbVar[ibn].nu_turb;
-      double nuTurbj = 3.5 * nuLamj;
+      double nuTurbj = nuTurbi;
+
+      TurbSA_VAR turb_dummy;
+      turb_dummy.nu_turb = nuTurbj;
+      TurbSA_VAR turb_rhs_dummy;
+      UpwindTurbSA::ComputeResidual(sxn, syn, ds, turbVar[ibn], turb_dummy,
+                                    cv[ibn], dummy, rhsTurb[ibn],
+                                    turb_rhs_dummy);
 
       TurbViscousBound::ComputeResidual(
           nuLami, nuLamj, nuTurbi, nuTurbj, gradTurbX[ibn], gradTurbY[ibn],

@@ -153,7 +153,6 @@ void FVMSolver::ConvToDependAll() {
   double gam1 = param.gamma - 1.0;
   double rgas = gam1 * param.Cp / param.gamma;
   double g1cp = gam1 * param.Cp;
-
   if (param.equationtype_ == preprocess::equationType::Euler) {
     for (int i = 0; i < geom.phyNodes; ++i) {
       double rhoq = cv[i].xmom * cv[i].xmom + cv[i].ymom * cv[i].ymom;
@@ -178,6 +177,16 @@ void FVMSolver::ConvToDependAll() {
       double rat = std::sqrt(dv[i].temp / s2) * s12 / (1.0 + s1 / dv[i].temp);
       dvlam[i].mu = param.refVisc * rat;
       dvlam[i].lambda = dvlam[i].mu * cppr;
+      if (std::isnan(rat)) {
+        std::cout << geom.coords[i].x << " " << geom.coords[i].y << "\n";
+        std::cout << rat << " " << dv[i].temp << " " << dv[i].press << " "
+                  << param.refVisc << "\n";
+        std::cout << "not a number from computing laminar mu" << "\n";
+        exit(1);
+      }
+      // if (param.refVisc != 0) {
+      //   std::cout << param.refVisc << "\n";
+      // }
     }
   }
 }
@@ -272,11 +281,18 @@ void FVMSolver::updateCV() {
     cv[i].xmom = cvOld[i].xmom - rhs[i].xmom;
     cv[i].ymom = cvOld[i].ymom - rhs[i].ymom;
     cv[i].ener = cvOld[i].ener - rhs[i].ener;
+    if (std::isnan(rhs[i].ener)) {
+      std::cout << "not a number from update energy" << "\n";
+    }
   }
 
   if (param.equationtype_ == preprocess::equationType::RANS) {
     for (int i = 0; i < geom.phyNodes; ++i) {
-      turbVar[i].nu_turb = turbVarOld[i].nu_turb - rhsTurb[i].nu_turb;
+      turbVar[i].nu_turb =
+          std::max(turbVarOld[i].nu_turb - rhsTurb[i].nu_turb, 0.0);
+      if (std::isnan(turbVar[i].nu_turb)) {
+        std::cout << "not a number from update" << "\n";
+      }
     }
   }
 }
