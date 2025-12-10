@@ -1,20 +1,20 @@
-title: "NACA 0012 airfoil; transonic flow"
+title: "NACA 0012 airfoil; transonic flow (SU2 mesh)"
 
 files:
-  grid_file: "n0012.ugr"
-  flow_field: "n0012_iso"      # Output with .v2d and 5-digit iteration number
-  surface_quantities: "n0012_surf"  # Output with .v2d and 5-digit iteration number
-  convergence_history: "n0012_conv" # Output with .v2d
+  grid_file: "mesh_NACA0012_1E-4m.su2"
+  flow_field: "n0012_su2_iso"
+  surface_quantities: "n0012_su2_surf"
+  convergence_history: "n0012_su2_conv"
   restart_in: "solin"
   restart_out: "solout"
 
 physics:
   general:
     flow_type: "E"               # E=external flow, I=internal flow
-    equation_type: "E"           # E=Euler, N=Navier-Stokes
+    equation_type: "R"           # E=Euler, N=Navier-Stokes, R=RANS
     gamma: 1.4                   # Ratio of specific heats
     cp: 1004.5                   # Specific heat at constant pressure [J/kgK]
-    reynolds_number: 5000.0
+    reynolds_number: 1.0e6
     reference_velocity: 0.0
     reference_density: 0.0
     prandtl_number: 0.72
@@ -36,9 +36,9 @@ physics:
 boundary_condition:
   Inflow: []
   Outflow: []
-  Farfield: ["Farfield"]
-  EulerWall: ["Airfoil"]
-  NoSlipWall: []
+  Farfield: ["farfield"]
+  EulerWall: []
+  NoSlipWall: ["airfoil"]
   Periodic: []
   Symmetric: [] 
 
@@ -48,21 +48,21 @@ geometry_reference:
   chord_length: 1.0              # Reference length [m]
 
 iteration_control:
-  max_iterations: 5000
+  max_iterations: 50000
   dump_frequency: 99999
   tolerance: 1.0e-5
   restart: "N"                   # Use previous solution for restart (Y/N)
 
 numerical_parameters:
-  time_scheme: LUSGS             # LUSGS / RK
+  time_scheme: RK             # LUSGS / RK
   lusgs_overrelaxation: 1.1      # overrelaxation parameter in LUSGS
   convection_scheme: ROE         # ROE/SLAU2/AUSM/AUSMUP2
-  cfl: 5.5
+  cfl: 0.8
   smoothing_coeff: 0.4
   smoothing_jacobi_iters: 2
   time_stepping: "L"             # L=local, G=global
-  limiter: Venkatakrishnan       # VenkatakrishnanLimiter/NishikawaR3
-  limiter_coefficient: 5.0
+  limiter: Venkatakrishnan       # Venkatakrishnan/NishikawaR3
+  limiter_coefficient: 1.5
   entropy_fix_coefficient: 0.05
   vortex_farfield_correction: "Y"
   stages: 5
