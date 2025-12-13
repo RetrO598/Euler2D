@@ -186,7 +186,7 @@ void FVMSolver::TurbSource() {
     double vorticity =
         (gradx[i].vely - grady[i].velx) * (gradx[i].vely - grady[i].velx);
     double omega = std::sqrt(vorticity);
-
+    sourceJacobian[i] = 0.0;
     if (geom.pointList[i].getWallDistance() > 1e-10) {
       double dist = geom.pointList[i].getWallDistance();
       double dist2 = dist * dist;
@@ -216,6 +216,33 @@ void FVMSolver::TurbSource() {
 
       rhsTurb[i].nu_turb -=
           (production - destruction + crossProduction) * geom.vol[i];
+
+      double Ji_3_cv1_3 = (Ji3 + cv1_3);
+      double dfv1 = 3.0 * Ji2 * cv1_3 / (nuLam * Ji_3_cv1_3 * Ji_3_cv1_3);
+      double Ji_fv1 = (1.0 + Ji * fv1);
+      double dfv2 = -(1.0 / nuLam - Ji2 * dfv1) / (Ji_fv1 * Ji_fv1);
+      double dShat = 0.0;
+      if (Shat <= 1.0e-10) {
+        dShat = 0.0;
+      } else {
+        dShat = (fv2 + turbVar[i].nu_turb * dfv2) * inv_k2_d2;
+      }
+      sourceJacobian[i] +=
+          cb1 * (turbVar[i].nu_turb * dShat + Shat) * geom.vol[i];
+
+      double dr =
+          (Shat - turbVar[i].nu_turb * dShat) * inv_Shat * inv_Shat * inv_k2_d2;
+      if (r == 10.0) {
+        dr = 0.0;
+      }
+      double dg = dr * (1.0 + cw2 * (6.0 * (r * r * r * r * r) - 1.0));
+      double dfw = dg * glim * (1.0 - g6 / (g6 + cw3_6));
+      sourceJacobian[i] -= cw1 * (dfw * turbVar[i].nu_turb + 2.0 * fw) *
+                           turbVar[i].nu_turb / dist2 * geom.vol[i];
+
+      if (sourceJacobian[i] > 0.0) {
+        sourceJacobian[i] = 0.0;
+      }
 
       if (std::isnan(production) || std::isnan(destruction) ||
           std::isnan(crossProduction)) {

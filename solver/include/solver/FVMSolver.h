@@ -158,6 +158,9 @@ class FVMSolver {
   std::vector<double> eigenVisc;
   std::vector<CONS_VAR> intermediateSol;
   std::vector<CONS_VAR> increment;
+  std::vector<double> sourceJacobian;
+  std::vector<TurbSA_VAR> intermediateSA;
+  std::vector<TurbSA_VAR> incrementSA;
 
   double cl;
   double cd;

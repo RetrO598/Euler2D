@@ -47,6 +47,9 @@ FVMSolver::FVMSolver(preprocess::parameter &parameter,
     dissTurb.resize(nNodes);
     rhsTurb.resize(nNodes);
     turbVarOld.resize(nNodes);
+    sourceJacobian.resize(nNodes);
+    intermediateSA.resize(nNodes);
+    incrementSA.resize(nNodes);
   } else {
     gradTx.resize(0);
     gradTy.resize(0);
@@ -57,6 +60,9 @@ FVMSolver::FVMSolver(preprocess::parameter &parameter,
     dissTurb.resize(0);
     rhsTurb.resize(0);
     turbVarOld.resize(0);
+    sourceJacobian.resize(0);
+    intermediateSA.resize(0);
+    incrementSA.resize(0);
   }
 
   diag.resize(nNodes);
@@ -343,6 +349,38 @@ void FVMSolver::computeWaveSpeed() {
         double eigen = f1 * mue;
         eigenVisc[index] = eigen * ds * ds;
       }
+
+      if (param.equationtype_ == preprocess::equationType::RANS) {
+        double muTurbi = 0.0;
+        double muTurbj = 0.0;
+        double lambdaTurbi = 0.0;
+        double lambdaTurbj = 0.0;
+
+        double nuLami = dvlam[iPoint].mu / cv[iPoint].dens;
+        double nuLamj = dvlam[jPoint].mu / cv[jPoint].dens;
+        double cv1_3 = 357.911;
+
+        double Ji_i = turbVar[iPoint].nu_turb / nuLami;
+        double Ji2_i = Ji_i * Ji_i;
+        double Ji3_i = Ji2_i * Ji_i;
+        double fv1_i = Ji3_i / (Ji3_i + cv1_3);
+
+        double Ji_j = turbVar[jPoint].nu_turb / nuLamj;
+        double Ji2_j = Ji_j * Ji_j;
+        double Ji3_j = Ji2_j * Ji_j;
+        double fv1_j = Ji3_j / (Ji3_j + cv1_3);
+        muTurbi = turbVar[iPoint].nu_turb * cv[iPoint].dens * fv1_i;
+        muTurbj = turbVar[jPoint].nu_turb * cv[jPoint].dens * fv1_j;
+
+        double rhoAve = 0.5 * (cv[iPoint].dens + cv[jPoint].dens);
+        double gammaAve = 0.5 * (dv[iPoint].gamma + dv[jPoint].gamma);
+        double mue = 0.5 * (dvlam[iPoint].mu / param.Prandtl +
+                            dvlam[jPoint].mu / param.Prandtl + muTurbi / 0.9 +
+                            muTurbj / 0.9);
+        double f1 = std::max(4.0 / 3.0 / rhoAve, gammaAve / rhoAve);
+        double eigen = f1 * mue;
+        eigenVisc[index] = eigen * ds * ds;
+      }
       index++;
     }
   }
@@ -356,7 +394,8 @@ void FVMSolver::computeJacobianDiag(double factor) {
       double lambda = waveSpeed[index] * factor;
       waveSpeed[index] = lambda;
       diag[iPoint] += 0.5 * lambda;
-      if (param.equationtype_ == preprocess::equationType::NavierStokes) {
+      if (param.equationtype_ == preprocess::equationType::NavierStokes ||
+          param.equationtype_ == preprocess::equationType::RANS) {
         diag[iPoint] += eigenVisc[index] / geom.vol[iPoint];
       }
       index++;
@@ -366,10 +405,11 @@ void FVMSolver::computeJacobianDiag(double factor) {
 
 void FVMSolver::lowerSweep() {
   CONS_VAR df{0.0, 0.0, 0.0, 0.0};
-
+  TurbSA_VAR dfSA{0.0};
   std::size_t index = 0;
   for (std::size_t iPoint = 0; iPoint < geom.pointList.size(); ++iPoint) {
     df = {0.0, 0.0, 0.0, 0.0};
+    dfSA = {0.0};
     for (std::size_t ineighbor = 0;
          ineighbor < geom.pointList[iPoint].getnPoint(); ++ineighbor) {
       std::size_t jPoint = geom.pointList[iPoint].getPoint(ineighbor);
@@ -398,6 +438,21 @@ void FVMSolver::lowerSweep() {
 
         gamma = dv[jPoint].gamma;
 
+        TurbSA_VAR solTurb = turbVar[jPoint];
+        TurbSA_VAR dSolTurb;
+        dSolTurb.nu_turb =
+            turbVar[jPoint].nu_turb + intermediateSA[jPoint].nu_turb;
+
+        TurbSA_VAR fTurb;
+        TurbSA_VAR dfTurb;
+        if (param.equationtype_ == preprocess::equationType::RANS) {
+          fTurb = turbFluxDifference::computeDifference(sol, solTurb, nx, ny);
+          dfTurb =
+              turbFluxDifference::computeDifference(dSol, dSolTurb, nx, ny);
+
+          dfTurb.nu_turb -= fTurb.nu_turb;
+        }
+
         auto f = fluxDifference::computeDifference(sol, nx, ny, gamma);
         auto dfj = fluxDifference::computeDifference(dSol, nx, ny, gamma);
 
@@ -407,7 +462,8 @@ void FVMSolver::lowerSweep() {
         dfj.ener -= f.ener;
 
         double ra = waveSpeed[index];
-        if (param.equationtype_ == preprocess::equationType::NavierStokes) {
+        if (param.equationtype_ == preprocess::equationType::NavierStokes ||
+            param.equationtype_ == preprocess::equationType::RANS) {
           double iPointx = geom.pointList[iPoint].getCoord(0);
           double iPointy = geom.pointList[iPoint].getCoord(1);
           double jPointx = geom.pointList[jPoint].getCoord(0);
@@ -421,6 +477,11 @@ void FVMSolver::lowerSweep() {
         df.xmom += (dfj.xmom * ds - ra * intermediateSol[jPoint].xmom);
         df.ymom += (dfj.ymom * ds - ra * intermediateSol[jPoint].ymom);
         df.ener += (dfj.ener * ds - ra * intermediateSol[jPoint].ener);
+
+        if (param.equationtype_ == preprocess::equationType::RANS) {
+          dfSA.nu_turb +=
+              (dfTurb.nu_turb * ds - ra * intermediateSA[jPoint].nu_turb);
+        }
       }
       index++;
     }
@@ -433,15 +494,22 @@ void FVMSolver::lowerSweep() {
         (-rhs[iPoint].ymom - 0.5 * df.ymom) / diag[iPoint];
     intermediateSol[iPoint].ener =
         (-rhs[iPoint].ener - 0.5 * df.ener) / diag[iPoint];
+
+    if (param.equationtype_ == preprocess::equationType::RANS) {
+      intermediateSA[iPoint].nu_turb =
+          (-rhsTurb[iPoint].nu_turb - 0.5 * dfSA.nu_turb) /
+          (diag[iPoint] - sourceJacobian[iPoint]);
+    }
   }
 }
 
 void FVMSolver::upperSweep() {
   CONS_VAR df{0.0, 0.0, 0.0, 0.0};
-
+  TurbSA_VAR dfSA{0.0};
   std::size_t index = waveSpeed.size();
   for (int iPoint = geom.pointList.size() - 1; iPoint > -1; --iPoint) {
     df = {0.0, 0.0, 0.0, 0.0};
+    dfSA = {0.0};
     for (int ineighbor = geom.pointList[iPoint].getnPoint() - 1; ineighbor > -1;
          --ineighbor) {
       index--;
@@ -471,6 +539,21 @@ void FVMSolver::upperSweep() {
 
         gamma = dv[jPoint].gamma;
 
+        TurbSA_VAR solTurb = turbVar[jPoint];
+        TurbSA_VAR dSolTurb;
+        dSolTurb.nu_turb =
+            turbVar[jPoint].nu_turb + incrementSA[jPoint].nu_turb;
+
+        TurbSA_VAR fTurb;
+        TurbSA_VAR dfTurb;
+        if (param.equationtype_ == preprocess::equationType::RANS) {
+          fTurb = turbFluxDifference::computeDifference(sol, solTurb, nx, ny);
+          dfTurb =
+              turbFluxDifference::computeDifference(dSol, dSolTurb, nx, ny);
+
+          dfTurb.nu_turb -= fTurb.nu_turb;
+        }
+
         auto f = fluxDifference::computeDifference(sol, nx, ny, gamma);
         auto dfj = fluxDifference::computeDifference(dSol, nx, ny, gamma);
 
@@ -480,7 +563,8 @@ void FVMSolver::upperSweep() {
         dfj.ener -= f.ener;
 
         double ra = waveSpeed[index];
-        if (param.equationtype_ == preprocess::equationType::NavierStokes) {
+        if (param.equationtype_ == preprocess::equationType::NavierStokes ||
+            param.equationtype_ == preprocess::equationType::RANS) {
           double iPointx = geom.pointList[iPoint].getCoord(0);
           double iPointy = geom.pointList[iPoint].getCoord(1);
           double jPointx = geom.pointList[jPoint].getCoord(0);
@@ -494,6 +578,11 @@ void FVMSolver::upperSweep() {
         df.xmom += (dfj.xmom * ds - ra * increment[jPoint].xmom);
         df.ymom += (dfj.ymom * ds - ra * increment[jPoint].ymom);
         df.ener += (dfj.ener * ds - ra * increment[jPoint].ener);
+
+        if (param.equationtype_ == preprocess::equationType::RANS) {
+          dfSA.nu_turb +=
+              (dfTurb.nu_turb * ds - ra * incrementSA[jPoint].nu_turb);
+        }
       }
     }
 
@@ -505,6 +594,12 @@ void FVMSolver::upperSweep() {
         intermediateSol[iPoint].ymom - 0.5 * df.ymom / diag[iPoint];
     increment[iPoint].ener =
         intermediateSol[iPoint].ener - 0.5 * df.ener / diag[iPoint];
+
+    if (param.equationtype_ == preprocess::equationType::RANS) {
+      incrementSA[iPoint].nu_turb =
+          intermediateSA[iPoint].nu_turb -
+          0.5 * dfSA.nu_turb / (diag[iPoint] - sourceJacobian[iPoint]);
+    }
   }
 }
 
@@ -515,22 +610,41 @@ void FVMSolver::LUSGSupdate() {
     cv[i].ymom += increment[i].ymom;
     cv[i].ener += increment[i].ener;
   }
+
+  if (param.equationtype_ == preprocess::equationType::RANS) {
+    for (std::size_t i = 0; i < geom.phyNodes; ++i) {
+      turbVar[i].nu_turb += incrementSA[i].nu_turb;
+    }
+  }
 }
 
 void FVMSolver::computeResidualLUSGS() {
   numeric->DissipInit();
+  if (param.equationtype_ == preprocess::equationType::RANS) {
+    TurbDissInit();
+  }
 
   if (param.equationtype_ == preprocess::equationType::NavierStokes) {
     GradientsVisc();
     fluxVisc();
   } else if (param.equationtype_ == preprocess::equationType::Euler) {
     Gradients();
+  } else if (param.equationtype_ == preprocess::equationType::RANS) {
+    GradientsVisc();
+    fluxVisc();
+    TurbGradients();
+    TurbViscous();
   }
 
   limiter->limiterInit();
   limiter->limiterUpdate();
 
   numeric->FluxNumeric();
+  if (param.equationtype_ == preprocess::equationType::RANS) {
+    TurbConvection();
+    TurbSource();
+  }
+
   BoundaryConditions();
   ZeroRes();
   PeriodicCons(rhs);

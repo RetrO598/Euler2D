@@ -59,4 +59,16 @@ struct fluxDifference {
     return result;
   }
 };
+
+struct turbFluxDifference {
+  inline static TurbSA_VAR computeDifference(CONS_VAR u, TurbSA_VAR turb,
+                                             double nx, double ny) {
+    TurbSA_VAR result;
+    double rho = u.dens;
+    double contrav = (u.xmom / rho * nx + u.ymom / rho * ny);
+
+    result.nu_turb = turb.nu_turb * contrav;
+    return result;
+  }
+};
 }  // namespace solver
