@@ -48,21 +48,21 @@ geometry_reference:
   chord_length: 1.0              # Reference length [m]
 
 iteration_control:
-  max_iterations: 80000
+  max_iterations: 50000
   dump_frequency: 99999
   tolerance: 1.0e-8
   restart: "N"                   # Use previous solution for restart (Y/N)
 
 numerical_parameters:
-  time_scheme: RK             # LUSGS / RK
+  time_scheme: LUSGS             # LUSGS / RK
   lusgs_overrelaxation: 1.1      # overrelaxation parameter in LUSGS
   convection_scheme: ROE         # ROE/SLAU2/AUSM/AUSMUP2
-  cfl: 0.8
+  cfl: 100.0
   smoothing_coeff: 0.4
-  smoothing_jacobi_iters: 2
+  smoothing_jacobi_iters: 0
   time_stepping: "L"             # L=local, G=global
   limiter: Venkatakrishnan       # Venkatakrishnan/NishikawaR3
-  limiter_coefficient: 1.5
+  limiter_coefficient: 1.1
   entropy_fix_coefficient: 0.05
   vortex_farfield_correction: "Y"
   stages: 5

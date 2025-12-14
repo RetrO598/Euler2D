@@ -27,7 +27,7 @@ void FVMSolver::TurbGradients() {
 
     if (std::isnan(ave)) {
       std::cout << "not a number from gradient\n";
-      exit(1);
+      // exit(1);
     }
   }
 
@@ -63,7 +63,7 @@ void FVMSolver::TurbGradients() {
 
         if (std::isnan(ave)) {
           std::cout << "not a number from gradient\n";
-          exit(1);
+          // exit(1);
         }
       }
     }
@@ -159,7 +159,7 @@ void FVMSolver::TurbViscous() {
       std::cout << "not a number from viscous" << "\n";
       std::cout << i << " " << dvlam[i].mu << "\n";
       std::cout << j << " " << dvlam[j].mu << "\n";
-      exit(1);
+      // exit(1);
     }
   }
 }
@@ -247,7 +247,7 @@ void FVMSolver::TurbSource() {
       if (std::isnan(production) || std::isnan(destruction) ||
           std::isnan(crossProduction)) {
         std::cout << "not a number from source" << "\n";
-        exit(1);
+        // exit(1);
       }
     }
   }

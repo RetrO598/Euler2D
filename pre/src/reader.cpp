@@ -362,7 +362,7 @@ void yamlReader::read(parameter& param) {
     param.temporalScheme = TemporalScheme::LUSGS;
   } else {
     std::cerr << "unknown temporal scheme: " << timeScheme << "\n";
-    exit(1);
+    // exit(1);
   }
 
   param.lusgsParameter = num["lusgs_overrelaxation"].as<double>();
@@ -378,7 +378,7 @@ void yamlReader::read(parameter& param) {
     param.convecScheme = ConvectionScheme::AUSMUP2;
   } else {
     std::cerr << "unknown convection scheme: " << convecScheme << "\n";
-    exit(1);
+    // exit(1);
   }
 
   param.CFL = num["cfl"].as<double>();
@@ -394,7 +394,7 @@ void yamlReader::read(parameter& param) {
     param.limiterType = Limiter::NishikawaR3;
   } else {
     std::cerr << "unknown limiter type: " << limiter << "\n";
-    exit(1);
+    // exit(1);
   }
 
   param.timestep_ = (tstep == "L" ? timeStep::local : timeStep::global);

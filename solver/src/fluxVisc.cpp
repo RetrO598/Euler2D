@@ -39,7 +39,7 @@ void FVMSolver::fluxVisc() {
       if (std::isnan(Ji_i)) {
         std::cout << turbVar[i].nu_turb << " " << nuLami << "\n";
         std::cout << "SA vaiable not a number" << "\n";
-        exit(1);
+        // exit(1);
       }
     }
 

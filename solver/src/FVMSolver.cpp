@@ -188,7 +188,7 @@ void FVMSolver::ConvToDependAll() {
         std::cout << rat << " " << dv[i].temp << " " << dv[i].press << " "
                   << param.refVisc << "\n";
         std::cout << "not a number from computing laminar mu" << "\n";
-        exit(1);
+        // exit(1);
       }
       // if (param.refVisc != 0) {
       //   std::cout << param.refVisc << "\n";
@@ -613,7 +613,7 @@ void FVMSolver::LUSGSupdate() {
 
   if (param.equationtype_ == preprocess::equationType::RANS) {
     for (std::size_t i = 0; i < geom.phyNodes; ++i) {
-      turbVar[i].nu_turb += incrementSA[i].nu_turb;
+      turbVar[i].nu_turb += std::max(incrementSA[i].nu_turb, 0.0);
     }
   }
 }

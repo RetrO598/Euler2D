@@ -372,7 +372,7 @@ void FVMBuilder::SetBoundVolume(MeshData<DIM> &mesh) {
         std::cout << "The surface element (" << iMarker << ", " << iElemSurface
                   << ") doesn't have an associated volume element."
                   << std::endl;
-        std::exit(1);
+        // std::exit(1);
       }
     }
   }

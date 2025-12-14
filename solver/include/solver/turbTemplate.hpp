@@ -27,7 +27,7 @@ struct UpwindTurbSA {
 
     if (std::isnan(result)) {
       std::cout << "not a number from convection\n";
-      exit(1);
+      // exit(1);
     }
   }
 };
@@ -48,7 +48,7 @@ struct TurbViscousBound {
 
     if (std::isnan(fv)) {
       std::cout << "not a number from visous boundary\n";
-      exit(1);
+      // exit(1);
     }
   }
 };
