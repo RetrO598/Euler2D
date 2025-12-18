@@ -12,9 +12,9 @@ set(CMAKE_EXTENSIONS OFF)
 
 project(CppCFD LANGUAGES CXX)
 
-add_subdirectory(pre)
+add_subdirectory(preprocess)
 add_subdirectory(solver)
 add_subdirectory(io)
 
 add_executable(main main.cpp)
-target_link_libraries(main PUBLIC pre solver io)
+target_link_libraries(main PUBLIC preprocess solver io)

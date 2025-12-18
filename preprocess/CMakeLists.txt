@@ -1,0 +1,5 @@
+file(GLOB_RECURSE srcs CONFIGURE_DEPENDS src/*.cpp include/*.h include/*.hpp ./*.hpp)
+find_package(yaml-cpp REQUIRED)
+add_library(preprocess STATIC ${srcs})
+target_include_directories(preprocess PUBLIC include)
+target_link_libraries(preprocess PUBLIC yaml-cpp::yaml-cpp)

@@ -1,6 +1,8 @@
 #include <solver/FVMSolver.h>
 
 #include <cmath>
+#include <fstream>
+#include <iostream>
 #include <stdexcept>
 #include <vector>
 

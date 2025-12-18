@@ -18,6 +18,6 @@ target_link_libraries(io PRIVATE
 
 # Add include directories to allow our code to find the VTK, pre, and solver headers
 target_include_directories(io PUBLIC 
-  "${PROJECT_SOURCE_DIR}/pre/include"
+  "${PROJECT_SOURCE_DIR}/preprocess/include"
   "${PROJECT_SOURCE_DIR}/solver/include"
 )
