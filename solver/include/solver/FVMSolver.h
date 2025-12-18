@@ -111,6 +111,7 @@ class FVMSolver {
   void TurbConvection();
   void TurbDissInit();
   void initTurbSolver();
+  void PeriodicTurb();
 
   preprocess::parameter &param;
   const preprocess::Geometry &geom;

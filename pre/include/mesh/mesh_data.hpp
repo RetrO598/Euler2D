@@ -5,6 +5,7 @@
 #include <grid/point.hpp>
 #include <grid/vertex.hpp>
 #include <iostream>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -14,6 +15,7 @@
 #include "element/utils.hpp"
 #include "grid/edge.hpp"
 #include "pre/geometry.h"
+#include "pre/parameter.h"
 
 namespace preprocess {
 
@@ -39,16 +41,20 @@ struct MeshData : MeshDataBase {
   void outputMeshInfo(const std::string &outFile) const;
 
   Geometry changeTo2Dgeometry(
-      std::unordered_map<std::string, preprocess::BoundaryType> boundaryMap)
-      const;
+      std::unordered_map<std::string, preprocess::BoundaryType> boundaryMap,
+      std::vector<PeriodicInfo> periodicInfo,
+      std::set<std::string> periodicMaster) const;
 };
 
 template <int DIM>
 Geometry MeshData<DIM>::changeTo2Dgeometry(
-    std::unordered_map<std::string, preprocess::BoundaryType> boundaryMap)
-    const {
+    std::unordered_map<std::string, preprocess::BoundaryType> boundaryMap,
+    std::vector<PeriodicInfo> periodicInfo,
+    std::set<std::string> periodicMaster) const {
   Geometry geometry;
   geometry.boundaryMap = boundaryMap;
+  geometry.periodicInfo = periodicInfo;
+  geometry.periodicMaster = periodicMaster;
   geometry.numBoundSegs = nBound;
   geometry.bname.resize(geometry.numBoundSegs);
   geometry.ibound.resize(geometry.numBoundSegs);
@@ -180,6 +186,7 @@ Geometry MeshData<DIM>::changeTo2Dgeometry(
   geometry.pointList = PointList;
 
   geometry.sproj.resize(geometry.phyNodes);
+  geometry.MatchPeriodic();
   geometry.CheckMetrics();
   geometry.FaceVectorsSymm();
   geometry.volumeProjections();

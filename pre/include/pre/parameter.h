@@ -1,5 +1,7 @@
 #pragma once
+#include <array>
 #include <cstddef>
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -28,18 +30,26 @@ enum class equationType { Euler, NavierStokes, RANS };
 
 enum class timeStep { local, global };
 
+struct PeriodicInfo {
+  std::string master_name;
+  std::string slave_name;
+  std::array<double, 2> center;
+  double rotate;
+  std::array<double, 2> translate;
+};
+
 struct parameter {
-  explicit parameter(){};
+  // explicit parameter(){};
 
-  parameter(const parameter &other) = delete;
+  // parameter(const parameter &other) = delete;
 
-  parameter &operator=(const parameter &other) = delete;
+  // parameter &operator=(const parameter &other) = delete;
 
-  parameter(parameter &&other) = delete;
+  // parameter(parameter &&other) = delete;
 
-  parameter &operator=(parameter &&other) = delete;
+  // parameter &operator=(parameter &&other) = delete;
 
-  ~parameter() = default;
+  // ~parameter() = default;
 
   void printParameters();
 
@@ -67,6 +77,8 @@ struct parameter {
 
   // Boundary Conditions
   std::unordered_map<std::string, BoundaryType> boundaryMap;
+  std::vector<PeriodicInfo> periodics;
+  std::set<std::string> periodicMaster;
 
   // Geometrical reference values
   double xRefPoint, yRefPoint, chord;

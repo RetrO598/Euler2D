@@ -19,30 +19,42 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   std::string inputFile = argv[1];
-  preprocess::yamlReader reader(inputFile);
+  preprocess::yamlReader config_reader(inputFile);
   preprocess::parameter param;
-  reader.read(param);
+  config_reader.read(param);
   param.printParameters();
 
   preprocess::Geometry geometry(param);
   std::unique_ptr<preprocess::MeshDataBase> mesh;
 
-  std::string extension = ".su2";
-  if (param.gridFile.size() >= extension.size() &&
-      param.gridFile.compare(param.gridFile.size() - extension.size(),
-                             extension.size(), extension) == 0) {
-    std::cout << "reading SU2 format mesh" << "\n";
-    preprocess::SU2Reader reader(param.gridFile);
-    mesh = reader.readMesh();
-    auto &data = static_cast<preprocess::MeshData<2> &>(*mesh);
-    preprocess::GridBuilder::FVMBuilder::build(data);
-    geometry = data.changeTo2Dgeometry(param.boundaryMap);
-    geometry.printInfo();
-  } else {
-    geometry.ReadGrid();
-    geometry.printInfo();
-    geometry.ComputeMetrics();
-  }
+  // for (auto &i : param.boundaryMap) {
+  //   std::cout << i.first << " " << int(i.second) << "\n";
+  // }
+
+  // for (auto &i : param.periodicMaster) {
+  //   std::cout << i << "\n";
+  // }
+
+  // std::string extension = ".su2";
+  // if (param.gridFile.size() >= extension.size() &&
+  //     param.gridFile.compare(param.gridFile.size() - extension.size(),
+  //                            extension.size(), extension) == 0) {
+  // std::cout << "reading SU2 format mesh" << "\n";
+  preprocess::SU2Reader mesh_reader(param.gridFile);
+  mesh = mesh_reader.readMesh();
+  auto &data = static_cast<preprocess::MeshData<2> &>(*mesh);
+  preprocess::GridBuilder::FVMBuilder::build(data);
+  geometry = data.changeTo2Dgeometry(param.boundaryMap, param.periodics,
+                                     param.periodicMaster);
+  geometry.printInfo();
+  geometry.outputMeshInfo();
+  // } else {
+  //   geometry.ReadGrid();
+  //   geometry.printInfo();
+  //   geometry.ComputeMetrics();
+  // }
+
+  // geometry.MatchPeriodic();
 
   if (param.equationtype_ == preprocess::equationType::RANS) {
     std::cout << "Computing Wall Distance." << "\n";
@@ -91,7 +103,7 @@ int main(int argc, char *argv[]) {
     std::cout << "Computation costs: " << time.count() << "s" << "\n";
   }
 
-  solver.writeLineDat();
+  // solver.writeLineDat();
 
   if (mesh) {
     std::cout << "Writing VTK output file..." << std::endl;

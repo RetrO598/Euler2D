@@ -116,15 +116,15 @@ void parameter::printParameters() {
   std::cout << "\n";
 
   if (flowtype_ == flowType::External) {
-    std::cout << " Density at infinity: " << RhoInfinity << "\n";
-    std::cout << " Velocity at infinity: " << velInfinity << "\n";
-    std::cout << " u at infinity: " << uInfinity << "\n";
-    std::cout << " v at infinity: " << vInfinity << "\n";
-    std::cout << " Reference Mach pow: " << refMach2 << "\n";
-    std::cout << " Reference Density: " << refRho << "\n";
-    std::cout << " Reference Velocity: " << refVel << "\n";
+    std::cout << "Density at infinity: " << RhoInfinity << "\n";
+    std::cout << "Velocity at infinity: " << velInfinity << "\n";
+    std::cout << "u at infinity: " << uInfinity << "\n";
+    std::cout << "v at infinity: " << vInfinity << "\n";
+    std::cout << "Reference Mach pow: " << refMach2 << "\n";
+    std::cout << "Reference Density: " << refRho << "\n";
+    std::cout << "Reference Velocity: " << refVel << "\n";
   } else {
-    std::cout << " Reference Mach pow: " << refMach2 << "\n";
+    std::cout << "Reference Mach pow: " << refMach2 << "\n";
   }
 }
 }  // namespace preprocess

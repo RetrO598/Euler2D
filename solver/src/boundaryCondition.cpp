@@ -669,7 +669,8 @@ void FVMSolver::PeriodicPrim(std::vector<PRIM_VAR> &var) {
     int iendn = geom.ibound[ib].bnodeIndex;
     auto name = geom.bname[ib];
     auto type = param.boundaryMap.find(name)->second;
-    if (type == preprocess::BoundaryType::Periodic) {
+    if (type == preprocess::BoundaryType::Periodic &&
+        geom.periodicMaster.find(name) != geom.periodicMaster.end()) {
       for (int ibn = ibegn; ibn <= iendn; ++ibn) {
         int i = geom.vertexList[ibn].nodeIdx;
         int j = geom.vertexList[ibn].periodicPair;
@@ -694,7 +695,8 @@ void FVMSolver::PeriodicCons(std::vector<CONS_VAR> &var) {
     int iendn = geom.ibound[ib].bnodeIndex;
     auto name = geom.bname[ib];
     auto type = param.boundaryMap.find(name)->second;
-    if (type == preprocess::BoundaryType::Periodic) {
+    if (type == preprocess::BoundaryType::Periodic &&
+        geom.periodicMaster.find(name) != geom.periodicMaster.end()) {
       for (int ibn = ibegn; ibn <= iendn; ++ibn) {
         int i = geom.vertexList[ibn].nodeIdx;
         int j = geom.vertexList[ibn].periodicPair;
@@ -722,7 +724,8 @@ void FVMSolver::PeriodicInt(std::vector<int> &var) {
     iendn = geom.ibound[ib].bnodeIndex;
     auto name = geom.bname[ib];
     auto type = param.boundaryMap.find(name)->second;
-    if (type == preprocess::BoundaryType::Periodic) {
+    if (type == preprocess::BoundaryType::Periodic &&
+        geom.periodicMaster.find(name) != geom.periodicMaster.end()) {
       for (ibn = ibegn; ibn <= iendn; ibn++) {
         int i = geom.vertexList[ibn].nodeIdx;
         int j = geom.vertexList[ibn].periodicPair;
@@ -742,7 +745,8 @@ void FVMSolver::PeriodicVisc(std::vector<double> &gradTx,
     auto name = geom.bname[ib];
     auto type = param.boundaryMap.find(name)->second;
     int iendn = geom.ibound[ib].bnodeIndex;
-    if (type == preprocess::BoundaryType::Periodic) {
+    if (type == preprocess::BoundaryType::Periodic &&
+        geom.periodicMaster.find(name) != geom.periodicMaster.end()) {
       for (int ibn = ibegn; ibn <= iendn; ++ibn) {
         int i = geom.vertexList[ibn].nodeIdx;
         int j = geom.vertexList[ibn].periodicPair;

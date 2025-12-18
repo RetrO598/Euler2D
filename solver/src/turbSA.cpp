@@ -1,7 +1,9 @@
 #include <algorithm>
 #include <cmath>
+#include <cstddef>
 #include <cstdlib>
 #include <iostream>
+#include <vector>
 
 #include "pre/parameter.h"
 #include "solver/FVMSolver.h"
@@ -165,6 +167,8 @@ void FVMSolver::TurbViscous() {
 }
 
 void FVMSolver::TurbSource() {
+  std::vector<double> source;
+  source.resize(geom.phyNodes, 0.0);
   for (int i = 0; i < geom.phyNodes; ++i) {
     double cv1_3 = 357.911;
     double k2 = 0.1681;
@@ -214,8 +218,9 @@ void FVMSolver::TurbSource() {
 
       crossProduction = cb2_sigma * norm2_Grad;
 
-      rhsTurb[i].nu_turb -=
-          (production - destruction + crossProduction) * geom.vol[i];
+      // rhsTurb[i].nu_turb -=
+      //     (production - destruction + crossProduction) * geom.vol[i];
+      source[i] = (production - destruction + crossProduction) * geom.vol[i];
 
       double Ji_3_cv1_3 = (Ji3 + cv1_3);
       double dfv1 = 3.0 * Ji2 * cv1_3 / (nuLam * Ji_3_cv1_3 * Ji_3_cv1_3);
@@ -250,6 +255,47 @@ void FVMSolver::TurbSource() {
         // exit(1);
       }
     }
+  }
+
+  std::size_t ibegn = 0;
+  for (std::size_t ib = 0; ib < geom.numBoundSegs; ++ib) {
+    std::size_t iendn = geom.ibound[ib].bnodeIndex;
+    auto name = geom.bname[ib];
+    auto type = geom.boundaryMap.find(name)->second;
+    if (type == preprocess::BoundaryType::Periodic &&
+        geom.periodicMaster.find(name) != geom.periodicMaster.end()) {
+      for (std::size_t ibn = ibegn; ibn <= iendn; ++ibn) {
+        std::size_t i = geom.vertexList[ibn].nodeIdx;
+        std::size_t j = geom.vertexList[ibn].periodicPair;
+        source[i] *= 0.5;
+        source[j] *= 0.5;
+      }
+    }
+    ibegn = iendn + 1;
+  }
+
+  for (std::size_t i = 0; i < geom.phyNodes; ++i) {
+    rhsTurb[i].nu_turb -= source[i];
+  }
+}
+
+void FVMSolver::PeriodicTurb() {
+  int ibegn = 0.0;
+  for (int ib = 0; ib < geom.numBoundSegs; ++ib) {
+    int iendn = geom.ibound[ib].bnodeIndex;
+    auto name = geom.bname[ib];
+    auto type = param.boundaryMap.find(name)->second;
+    if (type == preprocess::BoundaryType::Periodic &&
+        geom.periodicMaster.find(name) != geom.periodicMaster.end()) {
+      for (int ibn = ibegn; ibn <= iendn; ++ibn) {
+        int i = geom.vertexList[ibn].nodeIdx;
+        int j = geom.vertexList[ibn].periodicPair;
+
+        rhsTurb[i].nu_turb += rhsTurb[j].nu_turb;
+        rhsTurb[j].nu_turb = rhsTurb[i].nu_turb;
+      }
+    }
+    ibegn = iendn + 1;
   }
 }
 

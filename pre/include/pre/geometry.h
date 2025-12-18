@@ -2,6 +2,7 @@
 #include <pre/macro.h>
 #include <pre/reader.h>
 
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -16,7 +17,6 @@ class Geometry {
  public:
   int phyNodes, phyEdges, numElems, numBoundSegs, numBoundFaces, numBoundNodes;
 
-  std::vector<Tria> tria;
   std::vector<ElementHandle> elements;
   std::vector<Point<2>> pointList;
   std::vector<Edge2D> edge;
@@ -54,6 +54,8 @@ class Geometry {
     this->numElems = geometry.numElems;
     this->elements = std::move(geometry.elements);
     this->pointList = std::move(geometry.pointList);
+    this->periodicInfo = std::move(geometry.periodicInfo);
+    this->periodicMaster = std::move(geometry.periodicMaster);
   };
   Geometry &operator=(const Geometry &geomtry) = delete;
   Geometry &operator=(Geometry &&geometry) {
@@ -76,28 +78,25 @@ class Geometry {
     this->numElems = geometry.numElems;
     this->elements = std::move(geometry.elements);
     this->pointList = std::move(geometry.pointList);
+    this->periodicInfo = std::move(geometry.periodicInfo);
+    this->periodicMaster = std::move(geometry.periodicMaster);
+
     return *this;
   };
 
   void ComputeMetrics();
-  void GenerateEdgeList();
   void printInfo();
-  void GetNumberBoundNodes(int btypeFrom, int btypeTo) const;
-  void ReadGrid();
-  void ReadSU2Grid();
   void outputMeshInfo();
 
   //  private:
-  simpleReader gridReader;
   std::vector<EdgeList> tmpElist;
+  std::vector<PeriodicInfo> periodicInfo;
+  std::set<std::string> periodicMaster;
 
   void CheckMetrics();
-  // void DeleteTmpElist();
-  void DummyNodes();
   void FaceVectorsSymm();
-  void FaceVectorsVolumes();
-  void FaceVectorsVolumesBound();
   void volumeProjections();
   void ComputeWallDistance();
+  void MatchPeriodic();
 };
 }  // namespace preprocess

@@ -137,7 +137,8 @@ void FVMSolver::initSolver() {
     int iendn = geom.ibound[ib].bnodeIndex;
     auto name = geom.bname[ib];
     auto type = param.boundaryMap.find(name)->second;
-    if (type == preprocess::BoundaryType::Periodic) {
+    if (type == preprocess::BoundaryType::Periodic &&
+        geom.periodicMaster.find(name) != geom.periodicMaster.end()) {
       for (int ibn = ibegn; ibn <= iendn; ++ibn) {
         int i = geom.vertexList[ibn].nodeIdx;
         int j = geom.vertexList[ibn].periodicPair;
@@ -256,6 +257,7 @@ void FVMSolver::updateResidualRK(int irk) {
   BoundaryConditions();
   ZeroRes();
   PeriodicCons(rhs);
+  PeriodicTurb();
 
   double fac = param.stageCoeff[irk] * param.CFL;
   for (int i = 0; i < geom.phyNodes; ++i) {
@@ -648,5 +650,6 @@ void FVMSolver::computeResidualLUSGS() {
   BoundaryConditions();
   ZeroRes();
   PeriodicCons(rhs);
+  PeriodicTurb();
 }
 }  // namespace solver
