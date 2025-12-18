@@ -61,8 +61,6 @@ Geometry MeshData<DIM>::changeTo2Dgeometry(
   geometry.phyNodes = PointList.size();
   geometry.phyEdges = EdgeList.size();
 
-  // --- 先计算每个 marker 的局部大小与全局数量（numFaces/numNodes）并记录每个
-  // marker 的 start offset ---
   int numFaces = 0;
   int numNodes = 0;
   const Index nMarkers = static_cast<Index>(MarkerTag.size());
@@ -76,9 +74,7 @@ Geometry MeshData<DIM>::changeTo2Dgeometry(
     numNodes += static_cast<int>(VertexList[i].size());
     numFaces += static_cast<int>(BoundList[i].size());
 
-    // 你原先把 ibound
-    // 存为累计数量也没问题：保留这种语义（即存到目前为止的前缀和）
-    geometry.ibound[i].bnodeIndex = numNodes;  // 仍为前缀和（或总数到当前 i）
+    geometry.ibound[i].bnodeIndex = numNodes;
     geometry.ibound[i].bfaceIndex = numFaces;
     geometry.ibound[i].bfaceIndex--;
     geometry.ibound[i].bnodeIndex--;
@@ -88,11 +84,9 @@ Geometry MeshData<DIM>::changeTo2Dgeometry(
   geometry.numBoundFaces = numFaces;
   geometry.numBoundNodes = numNodes;
 
-  // resize 全局容器
   geometry.boundaryFace.resize(numFaces);
   geometry.vertexList.resize(numNodes);
 
-  // 用 start offsets 做全局索引，避免 i * local_size 的错误
   for (Index i = 0; i < nMarkers; ++i) {
     const int fstart = faceStart[i];
     const int nstart = nodeStart[i];
@@ -116,7 +110,6 @@ Geometry MeshData<DIM>::changeTo2Dgeometry(
     }
   }
 
-  // edges & sij
   geometry.edge.resize(EdgeList.size());
   geometry.sij.resize(EdgeList.size());
   for (Index i = 0; i < EdgeList.size(); ++i) {
@@ -126,7 +119,6 @@ Geometry MeshData<DIM>::changeTo2Dgeometry(
     geometry.sij[i].y = EdgeList[i].getNormal(1);
   }
 
-  // coords & volumes
   geometry.coords.resize(PointList.size());
   geometry.vol.resize(PointList.size());
   for (Index i = 0; i < PointList.size(); ++i) {
@@ -135,7 +127,6 @@ Geometry MeshData<DIM>::changeTo2Dgeometry(
     geometry.vol[i] = PointList[i].getVolume();
   }
 
-  // sbf: resize 后用 faceStart 访问，并修正 y 的赋值（之前是笔误）
   geometry.sbf.resize(geometry.numBoundFaces);
   for (Index i = 0; i < nMarkers; ++i) {
     const int fstart = faceStart[i];
@@ -144,14 +135,11 @@ Geometry MeshData<DIM>::changeTo2Dgeometry(
       int n1 = geometry.boundaryFace[idx].nodei;
       int n2 = geometry.boundaryFace[idx].nodej;
 
-      // 边界向量 s = (y2-y1, x1-x2) — 注意第二个是 .y
       geometry.sbf[idx].x = geometry.coords[n2].y - geometry.coords[n1].y;
       geometry.sbf[idx].y = geometry.coords[n1].x - geometry.coords[n2].x;
 
-      // 检查 BoundElemIndex 和 ElemList 的可用性（避免越界）
       int iElem = static_cast<int>(BoundElemIndex[i][ibf]);
       if (iElem < 0 || static_cast<size_t>(iElem) >= ElemList.size()) {
-        // 若发生，这里应根据实际需求处理错误。此处简单 continue。
         continue;
       }
 

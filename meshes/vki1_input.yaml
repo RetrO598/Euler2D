@@ -1,7 +1,7 @@
-title: "VKI-1 transonic turbine blade"
+title: "VKI-1 transonic turbine blade inviscid"
 
 files:
-  grid_file: "vki1.ugr"
+  grid_file: "vki1.su2"
   flow_field: "vki1_iso"      # Output with .v2d and 5-digit iteration number
   surface_quantities: "vki1_surf"  # Output with .v2d and 5-digit iteration number
   convergence_history: "vki1_conv" # Output with .v2d
@@ -39,8 +39,23 @@ boundary_condition:
   Farfield: []
   EulerWall: ["Blade"]
   NoSlipWall: []
-  Periodic: ["Periodic_1", "Periodic_3", "Periodic_2", "Periodic_4", "Periodic_5", "Periodic_6"]
   Symmetric: [] 
+  Periodic:
+    - master: "Periodic_1"
+      slave: "Periodic_4"
+      translation: [0.0, 0.71]
+      rotation: [0.0]            # only in z-direction
+      rotation_center: [0.0, 0.0]
+    - master: "Periodic_2"
+      slave: "Periodic_5"
+      translation: [0.0, 0.71]
+      rotation: [0.0]            # only in z-direction
+      rotation_center: [0.0, 0.0]
+    - master: "Periodic_3"
+      slave: "Periodic_6"
+      translation: [0.0, 0.71]
+      rotation: [0.0]            # only in z-direction
+      rotation_center: [0.0, 0.0]
 
 geometry_reference:
   x_ref: 0.25                    # Moment coefficient reference [m]
@@ -48,16 +63,16 @@ geometry_reference:
   chord_length: 1.0              # Reference length [m]
 
 iteration_control:
-  max_iterations: 3500
+  max_iterations: 3000
   dump_frequency: 99999
   tolerance: 1.0e-5
   restart: "N"                   # Use previous solution for restart (Y/N)
 
 numerical_parameters:
-  time_scheme: RK             # LUSGS / RK
+  time_scheme: LUSGS             # LUSGS / RK
   lusgs_overrelaxation: 1.1      # overrelaxation parameter in LUSGS
   convection_scheme: ROE         # ROE/SLAU2/AUSM/AUSMUP2
-  cfl: 5.5
+  cfl: 10
   smoothing_coeff: 0.4
   smoothing_jacobi_iters: 2
   time_stepping: "L"             # L=local, G=global

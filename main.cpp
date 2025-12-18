@@ -27,19 +27,6 @@ int main(int argc, char *argv[]) {
   preprocess::Geometry geometry(param);
   std::unique_ptr<preprocess::MeshDataBase> mesh;
 
-  // for (auto &i : param.boundaryMap) {
-  //   std::cout << i.first << " " << int(i.second) << "\n";
-  // }
-
-  // for (auto &i : param.periodicMaster) {
-  //   std::cout << i << "\n";
-  // }
-
-  // std::string extension = ".su2";
-  // if (param.gridFile.size() >= extension.size() &&
-  //     param.gridFile.compare(param.gridFile.size() - extension.size(),
-  //                            extension.size(), extension) == 0) {
-  // std::cout << "reading SU2 format mesh" << "\n";
   preprocess::SU2Reader mesh_reader(param.gridFile);
   mesh = mesh_reader.readMesh();
   auto &data = static_cast<preprocess::MeshData<2> &>(*mesh);
@@ -48,23 +35,11 @@ int main(int argc, char *argv[]) {
                                      param.periodicMaster);
   geometry.printInfo();
   geometry.outputMeshInfo();
-  // } else {
-  //   geometry.ReadGrid();
-  //   geometry.printInfo();
-  //   geometry.ComputeMetrics();
-  // }
-
-  // geometry.MatchPeriodic();
 
   if (param.equationtype_ == preprocess::equationType::RANS) {
     std::cout << "Computing Wall Distance." << "\n";
     geometry.ComputeWallDistance();
   }
-
-  // std::ofstream outputFile("wall_distance.txt");
-  // for (std::size_t i = 0; i < geometry.phyNodes; ++i) {
-  //   outputFile <<geometry.pointList[i].getWallDistance() << "\n";
-  // }
 
   solver::FVMSolver solver(param, geometry);
   solver.initSolver();
@@ -91,7 +66,6 @@ int main(int argc, char *argv[]) {
   } else if (param.temporalScheme == preprocess::TemporalScheme::RungeKutta) {
     std::cout << "using RungeKutta temporal scheme." << "\n";
     solver::RungeKuttaTimeIntegrator integrator(solver);
-
     auto start = std::chrono::high_resolution_clock::now();
     do {
       solver.iter++;

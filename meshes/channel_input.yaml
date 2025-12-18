@@ -39,8 +39,13 @@ boundary_condition:
   Farfield: []
   EulerWall: ["Bump", "Forward_wall", "Backward_wall"]
   NoSlipWall: []
-  Periodic: []
-  Symmetric: ["Symmetry"] 
+  Symmetric: ["Symmetry"]
+  Periodic: 
+    - master: 
+      slave: 
+      translation: 
+      rotation: 
+      rotation_center:  
 
 geometry_reference:
   x_ref: 1.5                     # Moment coefficient reference [m]

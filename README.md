@@ -48,5 +48,5 @@ rae2822 transonic airfoil:
 ## Todo:
 
 - [x] LUSGS time scheme for Euler equations.
-- [ ] LUSGS time scheme for RANS simulations.
-- [ ] Support for periodic boundary condition.
+- [x] LUSGS time scheme for RANS simulations.
+- [x] Support for periodic boundary condition.

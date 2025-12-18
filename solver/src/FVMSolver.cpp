@@ -257,7 +257,9 @@ void FVMSolver::updateResidualRK(int irk) {
   BoundaryConditions();
   ZeroRes();
   PeriodicCons(rhs);
-  PeriodicTurb();
+  if (param.equationtype_ == preprocess::equationType::RANS) {
+    PeriodicTurb();
+  }
 
   double fac = param.stageCoeff[irk] * param.CFL;
   for (int i = 0; i < geom.phyNodes; ++i) {
@@ -650,6 +652,8 @@ void FVMSolver::computeResidualLUSGS() {
   BoundaryConditions();
   ZeroRes();
   PeriodicCons(rhs);
-  PeriodicTurb();
+  if (param.equationtype_ == preprocess::equationType::RANS) {
+    PeriodicTurb();
+  }
 }
 }  // namespace solver
